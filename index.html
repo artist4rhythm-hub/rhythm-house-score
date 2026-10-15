@@ -345,6 +345,9 @@ textarea.code{width:100%;min-height:220px;border:1px solid var(--line-2);border-
 .page .rh-cols{flex:1 1 0;display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
 .page .rh-col{display:flex;flex-direction:column}
 .page .rh-col > .rh-line{flex:1 1 0}
+.page .rh-sub{flex:none;font-size:12px;color:#555;margin:-2px 0 4px}
+.page .rh-sys{flex:2 1 0;display:flex;flex-direction:column;border-left:3px solid #111;margin-left:30px;padding-left:0;position:relative}
+.page .rh-sys > .rh-line{flex:1 1 0;margin-left:-33px}
 
 /* ── 인쇄: 악보 한 장만 A4로 ───────────────────── */
 #printArea{display:none}
@@ -471,7 +474,7 @@ const firebaseConfig = {
 const OWNER_EMAIL = "artist4rhythm@gmail.com";
 
 // ③ 앱 버전 — 고쳐 올릴 때마다 여기와 version.json을 같이 올립니다
-const APP_VERSION = '1.5', APP_DATE = '2026.10.15';
+const APP_VERSION = '1.6', APP_DATE = '2026.10.16';
 
 // ══════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
@@ -574,241 +577,388 @@ function pageHTML(pg, footer){
     <div class="ft"><span><span class="wm">Rhythm House</span>${pg.src ? ' · ' + esc(pg.src) : ''}</span><span>${esc(footer || '')}</span></div></div>`;
 }
 // ══════════════════════════════════════════════════════════════
-//  리듬 읽기 악보 (스네어 한 줄 + 아래 베이스드럼)
+//  리듬 읽기 악보 (위 성부 + 아래 성부, 5줄 또는 1줄)
 //  한 마디 = 토큰을 공백으로 구분한 문자열
 //    음표 길이: w 온 · h 2분 · q 4분 · e 8분 · s 16분 · t 32분
 //    쉼표: 앞에 r  (rw rh rq re rs rt)
 //    점음표: 뒤에 .   (q. e. rq.)
-//    악센트 >  · 다음 음과 붙임줄 ~  · 스티킹 /R /L
+//    악센트 >  · 다음 음과 붙임줄 ~  · 스티킹 /R /L (/RLRL 여러 줄)
 //    셋잇단: 3[ e e e ]   (괄호 안 길이 합이 2/3로 줄어듦)
-//    세기 표시: 뒤에 @글자 (q@1  e@+  e@2+) · 마디 앞 표시: #A → (A)
+//    세기 표시: 뒤에 @글자 (q@1  e@+  e@2+)
 //    꾸밈음: 앞에 g (gq> 플램 · ggq> 드래그 · gggq 3개)
-//    롤 빗금: 점 뒤에 :1 :2 :3  (h:3~  e>:1)
-//    앞 마디 반복: 마디 전체를 %
-//  예) "q re e q. e"   "3[ e> e e ] 3[ e e e ] h"
+//    롤 빗금: :1 :2 :3  (h:3~  e>:1)
+//    악기(머리 위치): =s 스네어 · =x 하이햇 · =o 열린 하이햇 · =y 라이드 · =c 심벌 · =t 탐 · =f 플로어탐 · =k 킥 · =p 하이햇 발 · =X 스틱 (여럿: =xs)
+//  마디에 쓰는 표시 (음표 사이 아무 곳)
+//    #A → (A) · #[A] → 네모 A · |: 반복 시작 · :| 반복 끝 · ^1 ^2 1·2번 괄호
+//    T3/4 → 이 마디부터 박자 바꿈
+//    !p !mf !f … 셈여림 · !< !> 점점 세게/여리게 시작 · !/ 끝 · !cresc !dim !rit 글자 · !fermata 늘임표
+//    $글자 → 위에 글자 (밑줄 _ 은 띄어쓰기)  예) $Fine  $D.C._al_Fine
+//  마디 전체:  %  앞 마디 반복 · _  빈 마디(작곡 연습) · R4  4마디 쉼 · 앞에 * 를 붙이면 길이 검사를 하지 않음(못갖춘마디)
+//  예) "q re e q. e"   "3[ e> e e ] 3[ e e e ] h"   "e=x e=x e=xs e=x"
 // ══════════════════════════════════════════════════════════════
 const R_TICKS = {w:384, h:192, q:96, e:48, s:24, t:12};
 const R_LEVEL = {w:0, h:0, q:0, e:1, s:2, t:3};
-const R_TIME = {'4/4':[4,4], '2/4':[2,4], '3/4':[3,4], '2/2':[2,2], '6/8':[6,8], '12/8':[12,8]};
+const R_TIME = {'4/4':[4,4], '2/4':[2,4], '3/4':[3,4], '2/2':[2,2], '6/8':[6,8], '12/8':[12,8], '3/8':[3,8], '9/8':[9,8], '5/4':[5,4], '6/4':[6,4]};
+const R_INST = {s:5, x:9, o:9, y:8, c:10, t:7, f:3, k:1, p:-1, X:5};
+const R_XHEAD = {x:1, o:1, y:1, c:1, p:1, X:1};
+const R_DYN = ['ppp','pp','p','mp','mf','f','ff','fff','fp','sfz','sf','fz'];
 function rBarTicks(time){ const [n, d] = R_TIME[time] || [4,4]; return n * 384 / d; }
 
-// 토큰 하나 읽기 → {rest, base, dot, acc, tie, stick} 또는 null
+// 토큰 하나 읽기 → {rest, base, dot, acc, tie, stick, count, grace, roll, inst} 또는 null
 function rParseTok(t){
   const rm = /:([1-3])/.exec(t), roll = rm ? +rm[1] : 0;
   if(rm) t = t.replace(rm[0], '');
-  const m = /^(g{0,3})(r?)([whqest])(\.?)()([>~]*)(?:\/([RLrl]))?([>~]*)(?:@([^\s@>~\/:]{1,4}))?([>~]*)$/.exec(t);
+  const im = /=([sxoyctfkpX]+)/.exec(t), inst = im ? [...new Set(im[1].split(''))] : null;
+  if(im) t = t.replace(im[0], '');
+  const m = /^(g{0,3})(r?)([whqest])(\.?)()([>~]*)(?:\/([RLrl]{1,4}))?([>~]*)(?:@([^\s@>~\/:=]{1,4}))?([>~]*)$/.exec(t);
   if(!m) return null;
   const mods = m[6] + m[8] + m[10];
-  return {grace: m[1].length, rest: m[2] === 'r', base: m[3], dot: m[4] === '.', roll, acc: mods.includes('>'), tie: mods.includes('~'), stick: m[7] ? m[7].toUpperCase() : '', count: m[9] || ''};
+  return {grace: m[1].length, rest: m[2] === 'r', base: m[3], dot: m[4] === '.', roll, inst, acc: mods.includes('>'), tie: mods.includes('~'), stick: m[7] ? m[7].toUpperCase() : '', count: m[9] || ''};
 }
-// 마디 문자열 → 이벤트 목록 (onset · ticks). 오류는 errs에
+// 마디 문자열 → {ev, total, label, box, sim, empty, multi, free, repS, repE, volta, time, tail}
 function rParseBar(str, errs, where){
-  if(String(str).trim() === '%') return {ev: [], total: null, label: '', sim: true};
-  const toks = String(str).replace(/3\[/g, ' 3[ ').replace(/\]/g, ' ] ').trim().split(/\s+/).filter(Boolean);
-  const ev = []; let t = 0, tup = null, tupId = 0;
-  let label = '';
+  let src = String(str).trim();
+  const out = {ev: [], total: 0, label: '', box: false, repS: false, repE: false, volta: '', time: '', free: false};
+  if(src.startsWith('*')){ out.free = true; src = src.slice(1).trim(); }
+  const pre = src.split(/\s+/).filter(Boolean), rest = [];
+  for(const tok of pre){
+    if(tok === '|:'){ out.repS = true; continue; }
+    if(tok === ':|'){ out.repE = true; continue; }
+    if(/^\^[0-9.,]{1,5}$/.test(tok)){ out.volta = tok.slice(1); continue; }
+    if(/^T\d{1,2}\/\d{1,2}$/.test(tok)){ out.time = tok.slice(1); if(!R_TIME[out.time]) errs.push(`${where}: 박자 "${out.time}" 는 지원하지 않아요`); continue; }
+    if(/^#\[[A-Za-z0-9]{1,3}\]$/.test(tok)){ out.label = tok.slice(2, -1); out.box = true; continue; }
+    if(/^#[A-Za-z0-9]{1,3}$/.test(tok)){ out.label = tok.slice(1); continue; }
+    rest.push(tok);
+  }
+  const body = rest.join(' '), core = rest.filter(x => x[0] !== '$' && x[0] !== '!').join(' ');
+  const special = core === '%' || core === '_' || core === '' || /^R\d{1,3}$/.test(core);
+  if(special){
+    const mk = rest.filter(x => x[0] === '$' || x[0] === '!');
+    if(mk.length){ const sub = rParseBar(mk.join(' ') + ' rq', errs, where); out.tail = {...(sub.ev[0] || {})}; ['base','rest','onset','ticks','level','tup','tupStart','dot','grace','roll','inst','acc','tie','stick','count'].forEach(k => delete out.tail[k]); }
+    out.total = null;
+    if(core === '%') out.sim = true;
+    else if(core === '_' || core === '') out.empty = true;
+    else out.multi = +core.slice(1);
+    return out;
+  }
+  const toks = body.replace(/3\[/g, ' 3[ ').replace(/\]/g, ' ] ').trim().split(/\s+/).filter(Boolean);
+  let t = 0, tup = null, tupId = 0, pend = {};
   for(const tok of toks){
-    if(/^#[A-Za-z0-9]{1,3}$/.test(tok)){ label = tok.slice(1); continue; }
-    if(tok === '3['){ if(tup){ errs.push(`${where}: 셋잇단 괄호가 겹쳤어요`); } tup = {id: ++tupId, start: ev.length}; continue; }
-    if(tok === ']'){ if(!tup){ errs.push(`${where}: 닫는 괄호 ] 가 남아요`); continue; } tup.end = ev.length - 1; for(let i = tup.start; i <= tup.end; i++) ev[i].tupEnd = tup.end; tup = null; continue; }
+    if(tok === '3['){ if(tup){ errs.push(`${where}: 셋잇단 괄호가 겹쳤어요`); } tup = {id: ++tupId, start: out.ev.length}; continue; }
+    if(tok === ']'){ if(!tup){ errs.push(`${where}: 닫는 괄호 ] 가 남아요`); continue; } tup.end = out.ev.length - 1; for(let i = tup.start; i <= tup.end; i++) out.ev[i].tupEnd = tup.end; tup = null; continue; }
+    if(tok[0] === '!' && tok.length > 1){ const d = tok.slice(1);
+      if(R_DYN.includes(d)) pend.dyn = d;
+      else if(d === '<' || d === '>') pend.hair = d;
+      else if(d === '/') pend.hairEnd = true;
+      else if(['cresc','dim','decresc','rit','accel','rall','a_tempo','molto_rit'].includes(d)) pend.word = d.replace(/_/g, ' ') + (d === 'a_tempo' ? '' : '.');
+      else if(d === 'fermata') pend.ferm = true;
+      else errs.push(`${where}: "${tok}" 는 모르는 표시예요`);
+      continue; }
+    if(tok[0] === '$' && tok.length > 1){ pend.txt = (pend.txt ? pend.txt + ' ' : '') + tok.slice(1).replace(/_/g, ' ').slice(0, 30); continue; }
     const p = rParseTok(tok);
     if(!p){ errs.push(`${where}: "${tok}" 는 읽을 수 없는 음표예요`); continue; }
     if(p.rest && (p.tie || p.acc || p.grace || p.roll)) errs.push(`${where}: 쉼표 "${tok}" 에는 악센트·붙임줄·꾸밈음·롤을 달 수 없어요`);
     let d = R_TICKS[p.base] * (p.dot ? 1.5 : 1);
     if(tup) d = d * 2 / 3;
-    ev.push({...p, onset: t, ticks: d, level: R_LEVEL[p.base], tup: tup ? tup.id : 0, tupStart: tup ? tup.start : -1});
+    const e = {...p, onset: t, ticks: d, level: R_LEVEL[p.base], tup: tup ? tup.id : 0, tupStart: tup ? tup.start : -1};
+    Object.assign(e, pend); pend = {};
+    out.ev.push(e);
     t += d;
   }
+  if(Object.keys(pend).length) out.tail = pend;   // 마디 끝에 남은 표시 (점점 세게 끝 · Fine 등)
   if(tup) errs.push(`${where}: 셋잇단 괄호 ] 가 닫히지 않았어요`);
-  return {ev, total: Math.round(t), label};
+  out.total = Math.round(t);
+  return out;
 }
 
 function rEsc(v){ return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function rEll(cx, cy, rx, ry, deg){ const r = deg*Math.PI/180, c = Math.cos(r)*rx, s = Math.sin(r)*rx;
   return `M${cx-c},${cy-s}A${rx},${ry} ${deg} 1 0 ${cx+c},${cy+s}A${rx},${ry} ${deg} 1 0 ${cx-c},${cy-s}Z`; }
 
-
 // 음표 길이에 따른 가로 간격 (줄 간격 sp 단위)
 function rWeight(ticks){ return 1.4 + 1.5 * Math.log2(ticks / 24 + 1); }
 const R_PAD_L = 1.3, R_PAD_R = 1.0;
+// 줄 하나의 배치 계산. opt.time = 줄 시작 박자
 function rLayoutLine(item, opt){
-  const barT = rBarTicks(opt && opt.time), [nB, dB] = R_TIME[(opt && opt.time)] || [4,4];
+  let time = (opt && opt.time) || '4/4';
   const bars = item.bars.map((b, bi) => {
-    const {ev, label, sim} = rParseBar(b, [], '');
-    if(sim) return {ev: [], bev: [], pos: new Map(), units: 5.5, label: '', sim: true};
+    const P = rParseBar(b, [], '');
+    if(P.time) time = P.time;
+    const barT = rBarTicks(time);
+    const extraL = (P.repS ? 1.6 : 0) + (P.time ? 3.4 : 0), extraR = P.repE ? 1.6 : 0;
+    if(P.sim || P.empty || P.multi){
+      const u = P.empty ? Math.max(4, rWeight(96) * barT / 96) : P.multi ? 7 : 5.5;
+      return {...P, ev: [], bev: [], pos: new Map(), units: u, extraL, extraR, curTime: time};
+    }
     const bassStr = item.bass ? item.bass[bi] : (opt && opt.bass === 'beat' ? Array(Math.max(1, Math.round(barT / 96))).fill('q').join(' ') : '');
-    const bev = bassStr ? rParseBar(bassStr, [], '').ev : [];
-    // 스네어와 베이스의 모든 시작점을 모아 간격을 정함
-    const ons = [...new Set(ev.map(e => +e.onset.toFixed(3)).concat(bev.map(e => +e.onset.toFixed(3))))].sort((a, c) => a - c);
+    let bev = [];
+    if(bassStr){ const BP = rParseBar(bassStr, [], ''); if(!BP.sim && !BP.empty && !BP.multi) bev = BP.ev; }
+    const ons = [...new Set(P.ev.map(e => +e.onset.toFixed(3)).concat(bev.map(e => +e.onset.toFixed(3))))].sort((a, c) => a - c);
     const pos = new Map(); let u = 0;
     ons.forEach((o, i) => {
-      const g = Math.max(0, ...ev.filter(e => Math.abs(e.onset - o) < 1e-3).map(e => e.grace || 0));
+      const g = Math.max(0, ...P.ev.filter(e => Math.abs(e.onset - o) < 1e-3).map(e => e.grace || 0));
       if(g) u += .9 + g * 1.05;   // 꾸밈음 자리
       pos.set(o, u); u += rWeight((i + 1 < ons.length ? ons[i+1] : barT) - o); });
-    return {ev, bev, pos, units: u, label};
+    return {...P, bev, pos, units: Math.max(u, 2), extraL, extraR, curTime: time};
   });
-  return {bars, units: bars.reduce((a, b) => a + b.units + R_PAD_L + R_PAD_R, 0)};
+  return {bars, endTime: time, units: bars.reduce((a, b) => a + b.units + b.extraL + b.extraR + R_PAD_L + R_PAD_R, 0)};
+}
+// 줄에 무엇이 있는지 (위·아래 여백 계산용)
+function rLineFeatures(lay, item){
+  const f = {stickRows: 0, count: false, label: false, txt: false, volta: false, dyn: false, bassAcc: false, upMax: 5, downMin: 1, hasDown: false, ferm: false};
+  lay.bars.forEach(b => {
+    if(b.label) f.label = true; if(b.volta) f.volta = true;
+    const look = e => { if(e.txt) f.txt = true; if(e.dyn || e.hair || e.hairEnd || e.word) f.dyn = true; if(e.ferm) f.ferm = true; };
+    b.ev.forEach(e => { look(e); if(e.stick) f.stickRows = Math.max(f.stickRows, e.stick.length); if(e.count) f.count = true;
+      if(!e.rest) (e.inst || ['s']).forEach(c => { f.upMax = Math.max(f.upMax, R_INST[c]); }); });
+    if(b.tail) look(b.tail);
+    if(b.bev.length) f.hasDown = true;
+    b.bev.forEach(e => { look(e); if(e.acc) f.bassAcc = true; if(!e.rest) (e.inst || ['k']).forEach(c => { f.downMin = Math.min(f.downMin, R_INST[c]); }); });
+  });
+  if(item.tempo || item.above) f.txt = true;
+  if(item.below) f.dyn = true;
+  return f;
+}
+function rSpace(F, stickBelow){
+  const sRows = F.stickRows ? F.stickRows * 1.45 + .3 : 0;
+  const above = (stickBelow ? 0 : sRows) + (F.count ? 1.7 : 0) + (F.label ? 1.9 : 0) + (F.volta ? 1.9 : 0) + (F.txt ? 1.9 : 0) + (F.ferm ? 1.2 : 0) + Math.max(0, F.upMax - 5) * .5 + 4.6;
+  const below = (F.hasDown ? 3.6 + Math.max(0, 1 - F.downMin) * .5 : 2.2) + (F.bassAcc ? .8 : 0) + (F.dyn ? 2.6 : 0) + (stickBelow ? sRows + .6 : 0);
+  return {above, below, sRows};
 }
 
 // 한 줄(여러 마디) 그리기
 function rDrawLine(item, W, sp, opt){
-  const k = '#111', bars = item.bars, barT = rBarTicks(opt.time);
-  const above = (opt.hasStick ? 1.6 : 0) + (opt.hasCount ? 1.7 : 0) + (opt.hasLabel ? 1.6 : 0) + 4.6, below = (item.bass || []).some(b => /[a-z]\.?(:\d)?>/.test(b)) ? 4.3 : 3.6;
+  const k = '#111', bars = item.bars, one = opt.staff === 1;
+  const lay = rLayoutLine(item, opt), F = rLineFeatures(lay, item);
+  const stickBelow = !!opt.stickBelow;
+  const {above, below, sRows} = rSpace(F, stickBelow);
   const top = above*sp, bot = top + 4*sp, H = bot + below*sp;
   const yOf = p => bot - p*sp/2;
-  const snY = yOf(5), bdY = yOf(1), restY = yOf(6.5), stemTop = snY - 3.6*sp, accY = stemTop - 1.25*sp, tupY = stemTop - 0.75*sp, stY = accY - 1.3*sp, cntY = stY - (opt.hasStick ? 1.6*sp : 0) + (opt.hasStick ? 0 : 0.2*sp);
-  const pre = (opt.showTime ? 5.6 : 2.6)*sp + (item.repeat ? 1.6*sp : 0), post = 0.6*sp;
-  const lay = rLayoutLine(item, opt), stretch = (W - pre - post) / (lay.units * sp);   // 남는 폭은 고르게 늘림
-  const barX = []; { let x = pre; lay.bars.forEach(b => { barX.push(x); x += (b.units + R_PAD_L + R_PAD_R) * sp * stretch; }); barX.push(x); }
+  const posOf = c => one ? 4 : R_INST[c];
+  const upHi = one ? 4 : F.upMax, stemTop = yOf(upHi) - 3.6*sp;
+  const accY = stemTop - 1.25*sp, tupY = stemTop - .75*sp;
+  let rowY = accY - 1.0*sp;                      // 위로 쌓이는 글자 줄
+  const stY = rowY; if(F.stickRows && !stickBelow) rowY -= sRows*sp;
+  const cntY = rowY; if(F.count) rowY -= 1.7*sp;
+  const labY = rowY - .2*sp; if(F.label) rowY -= 1.9*sp;
+  const volY = rowY + .1*sp; if(F.volta) rowY -= 1.9*sp;
+  const txtY = rowY + .3*sp;
+  const downLow = one ? 4 : Math.min(F.downMin, 1), stemBot = yOf(downLow) + 3.2*sp;
+  const belowBase = F.hasDown ? Math.max(stemBot, bot) + (F.bassAcc ? 1.7 : .6)*sp : bot + (one ? -.2 : .6)*sp;
+  const dynY = belowBase + 1.6*sp;
+  const stBelowY = (F.dyn ? dynY + .6*sp : belowBase) + 1.5*sp;
+  const restUp = one ? yOf(4) : (F.hasDown ? yOf(6.5) : yOf(4)), restDown = yOf(.6);
+  const pre = (opt.showTime ? 5.6 : 2.6)*sp + (item.repeat ? 1.6*sp : 0), post = .6*sp;
+  const stretch = (W - pre - post) / (lay.units * sp);   // 남는 폭은 고르게 늘림
+  const barX = []; { let x = pre; lay.bars.forEach(b => { barX.push(x); x += (b.units + b.extraL + b.extraR + R_PAD_L + R_PAD_R) * sp * stretch; }); barX.push(x); }
+  const serif = `'Noto Serif KR','Noto Serif CJK KR',Georgia,'Times New Roman',serif`;
   let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">`;
-  for(let i = 0; i < 5; i++) s += `<line x1="0" x2="${W}" y1="${yOf(i*2)}" y2="${yOf(i*2)}" stroke="${k}" stroke-width=".8"/>`;
-  s += `<rect x="${.2*sp}" y="${yOf(6)}" width="${.42*sp}" height="${2*sp}" fill="${k}"/><rect x="${.95*sp}" y="${yOf(6)}" width="${.42*sp}" height="${2*sp}" fill="${k}"/>`;
-  if(opt.showTime){ const [n, d] = (opt.time || '4/4').split('/'), fz = 2.75*sp, tx = 3.6*sp, f = `'Noto Serif KR','Noto Serif CJK KR',Georgia,'Times New Roman',serif`;
-    s += `<text x="${tx}" y="${yOf(4)-.05*sp}" text-anchor="middle" style="font:900 ${fz}px ${f}" fill="${k}">${n}</text><text x="${tx}" y="${yOf(0)-.05*sp}" text-anchor="middle" style="font:900 ${fz}px ${f}" fill="${k}">${d}</text>`; }
-  if(item.repeat){ const rx = pre - 1.9*sp;
-    s += `<rect x="${rx}" y="${yOf(8)}" width="${.45*sp}" height="${4*sp}" fill="${k}"/><line x1="${rx+.9*sp}" x2="${rx+.9*sp}" y1="${yOf(8)}" y2="${yOf(0)}" stroke="${k}" stroke-width=".9"/>`;
-    s += `<circle cx="${rx+1.45*sp}" cy="${yOf(5)}" r="${.22*sp}" fill="${k}"/><circle cx="${rx+1.45*sp}" cy="${yOf(3)}" r="${.22*sp}" fill="${k}"/>`; }
+  // 줄 · 음자리
+  if(one) s += `<line x1="0" x2="${W}" y1="${yOf(4)}" y2="${yOf(4)}" stroke="${k}" stroke-width=".9"/>`;
+  else for(let i = 0; i < 5; i++) s += `<line x1="0" x2="${W}" y1="${yOf(i*2)}" y2="${yOf(i*2)}" stroke="${k}" stroke-width=".8"/>`;
+  const yT = one ? yOf(4) - 1.2*sp : yOf(8), yB = one ? yOf(4) + 1.2*sp : yOf(0);
+  const clefY0 = one ? yOf(4) - 1.2*sp : yOf(6), clefH = one ? 2.4*sp : 2*sp;
+  s += `<rect x="${.2*sp}" y="${clefY0}" width="${.42*sp}" height="${clefH}" fill="${k}"/><rect x="${.95*sp}" y="${clefY0}" width="${.42*sp}" height="${clefH}" fill="${k}"/>`;
+  const tsig = (x, time) => { const [n, d] = (time || '4/4').split('/'), fz = (one ? 2.2 : 2.75)*sp;
+    const yN = one ? yOf(4) - .15*sp : yOf(4) - .05*sp, yD = one ? yOf(4) + 1.75*sp : yOf(0) - .05*sp;
+    return `<text x="${x}" y="${yN}" text-anchor="middle" style="font:900 ${fz}px ${serif}" fill="${k}">${n}</text><text x="${x}" y="${yD}" text-anchor="middle" style="font:900 ${fz}px ${serif}" fill="${k}">${d}</text>`; };
+  if(opt.showTime) s += tsig(3.6*sp, opt.time);
+  const dotA = one ? yOf(4) - .6*sp : yOf(5), dotB = one ? yOf(4) + .6*sp : yOf(3);
+  const repStart = x => `<rect x="${x}" y="${yT}" width="${.45*sp}" height="${yB-yT}" fill="${k}"/><line x1="${x+.9*sp}" x2="${x+.9*sp}" y1="${yT}" y2="${yB}" stroke="${k}" stroke-width=".9"/><circle cx="${x+1.45*sp}" cy="${dotA}" r="${.22*sp}" fill="${k}"/><circle cx="${x+1.45*sp}" cy="${dotB}" r="${.22*sp}" fill="${k}"/>`;
+  const repEnd = x => `<circle cx="${x-1.4*sp}" cy="${dotA}" r="${.22*sp}" fill="${k}"/><circle cx="${x-1.4*sp}" cy="${dotB}" r="${.22*sp}" fill="${k}"/><line x1="${x-.9*sp}" x2="${x-.9*sp}" y1="${yT}" y2="${yB}" stroke="${k}" stroke-width="1"/><rect x="${x-.45*sp}" y="${yT}" width="${.45*sp}" height="${yB-yT}" fill="${k}"/>`;
+  if(item.repeat) s += repStart(pre - 1.9*sp);
+  // 줄 머리 글자 (빠르기 · 나타냄말)
+  { let tx = .2*sp; const ty = txtY;
+    if(item.tempo){ const m = /^([qeh])(\.?)\s*=\s*(.+)$/.exec(String(item.tempo));
+      if(m){ const nx = tx + .7*sp, ny = ty - .35*sp;
+        s += m[1] === 'h' ? `<path fill-rule="evenodd" fill="${k}" d="${rEll(nx,ny,.5*sp,.36*sp,-20)}${rEll(nx,ny,.31*sp,.15*sp,-34)}"/>` : `<path fill="${k}" d="${rEll(nx, ny, .5*sp, .36*sp, -20)}"/>`;
+        s += `<line x1="${nx+.46*sp}" x2="${nx+.46*sp}" y1="${ny}" y2="${ny-2.1*sp}" stroke="${k}" stroke-width="${.11*sp}"/>`;
+        if(m[1] === 'e') s += `<path d="M${nx+.46*sp},${ny-2.1*sp} C${nx+.6*sp},${ny-1.4*sp} ${nx+1.3*sp},${ny-1.3*sp} ${nx+1.0*sp},${ny-.4*sp}" stroke="${k}" stroke-width="${.15*sp}" fill="none"/>`;
+        if(m[2]) s += `<circle cx="${nx+.95*sp}" cy="${ny}" r="${.14*sp}" fill="${k}"/>`;
+        const tt = `= ${m[3]}`; s += `<text x="${nx + 1.4*sp}" y="${ty}" style="font:700 ${1.45*sp}px ${serif}" fill="${k}">${rEsc(tt)}</text>`; tx = nx + 1.4*sp + tt.length * .8*sp + 1.4*sp; }
+      else { s += `<text x="${tx}" y="${ty}" style="font:700 ${1.45*sp}px ${serif}" fill="${k}">${rEsc(item.tempo)}</text>`; tx += String(item.tempo).length * .85*sp + 1.4*sp; } }
+    if(item.above) s += `<text x="${tx}" y="${ty}" style="font:italic 700 ${1.45*sp}px ${serif}" fill="${k}">${rEsc(item.above)}</text>`;
+    if(item.below) s += `<text x="${.2*sp}" y="${dynY}" style="font:italic 400 ${1.35*sp}px ${serif}" fill="${k}">${rEsc(item.below)}</text>`; }
+
   const hx = .62*sp, hy = .44*sp, stemW = .12*sp;
-  const head = (x, y, base) => base === 'w' ? `<path fill-rule="evenodd" fill="${k}" d="${rEll(x,y,.82*sp,.5*sp,0)}${rEll(x,y,.42*sp,.28*sp,58)}"/>`
-    : base === 'h' ? `<path fill-rule="evenodd" fill="${k}" d="${rEll(x,y,hx,hy,-20)}${rEll(x,y,hx*.62,hy*.42,-34)}"/>`
-    : `<path fill="${k}" d="${rEll(x,y,hx,hy,-20)}"/>`;
+  const head = (x, y, base, xh) => {
+    if(xh){ const r = .5; const xs = `<path d="M${x-r*sp},${y-r*sp}L${x+r*sp},${y+r*sp}M${x-r*sp},${y+r*sp}L${x+r*sp},${y-r*sp}" stroke="${k}" stroke-width="${.16*sp}" stroke-linecap="round"/>`;
+      return base === 'w' || base === 'h' ? xs + `<circle cx="${x}" cy="${y}" r="${.75*sp}" fill="none" stroke="${k}" stroke-width="${.1*sp}"/>` : xs; }
+    return base === 'w' ? `<path fill-rule="evenodd" fill="${k}" d="${rEll(x,y,.82*sp,.5*sp,0)}${rEll(x,y,.42*sp,.28*sp,58)}"/>`
+      : base === 'h' ? `<path fill-rule="evenodd" fill="${k}" d="${rEll(x,y,hx,hy,-20)}${rEll(x,y,hx*.62,hy*.42,-34)}"/>`
+      : `<path fill="${k}" d="${rEll(x,y,hx,hy,-20)}"/>`; };
+  const ledger = (x, p) => { let g = ''; if(one) return g;
+    for(let q = 10; q <= p; q += 2) g += `<line x1="${x-1.0*sp}" x2="${x+1.0*sp}" y1="${yOf(q)}" y2="${yOf(q)}" stroke="${k}" stroke-width=".9"/>`;
+    for(let q = -2; q >= p; q -= 2) g += `<line x1="${x-1.0*sp}" x2="${x+1.0*sp}" y1="${yOf(q)}" y2="${yOf(q)}" stroke="${k}" stroke-width=".9"/>`;
+    return g; };
   const restG = (x, y, base) => {
     const P = (a, b) => `${x+a*sp},${y+b*sp}`;
-    if(base === 'w') return `<rect x="${x-.6*sp}" y="${yOf(8)}" width="${1.2*sp}" height="${.5*sp}" fill="${k}"/>`;
-    if(base === 'h') return `<rect x="${x-.6*sp}" y="${yOf(6)-.5*sp}" width="${1.2*sp}" height="${.5*sp}" fill="${k}"/>`;
+    if(base === 'w'){ const ly = one ? yOf(4) : (F.hasDown ? (y < yOf(4) ? yOf(8) : yOf(2)) : yOf(6)); return `<rect x="${x-.6*sp}" y="${ly}" width="${1.2*sp}" height="${.5*sp}" fill="${k}"/>`; }
+    if(base === 'h'){ const ly = one ? yOf(4) : (F.hasDown ? (y < yOf(4) ? yOf(6) : yOf(0)) : yOf(4)); return `<rect x="${x-.6*sp}" y="${ly - .5*sp}" width="${1.2*sp}" height="${.5*sp}" fill="${k}"/>`; }
     if(base === 'q') return `<path fill="${k}" d="M${P(-.15,-1.55)}L${P(.55,-.72)}Q${P(.18,-.32)} ${P(.25,.02)}L${P(.7,.58)}Q${P(.1,.36)} ${P(.02,.78)}Q${P(-.02,1.16)} ${P(.32,1.5)}Q${P(-.42,1.22)} ${P(-.36,.76)}Q${P(-.3,.32)} ${P(.24,.44)}L${P(-.34,-.2)}Q${P(.02,-.55)} ${P(-.02,-.95)}Z"/>`;
     const n = base === 'e' ? 1 : base === 's' ? 2 : 3; let g = '';
     const x0 = x + .45*sp, y0 = y - .9*sp;
     g += `<path d="M${x0},${y0} L${x0-(.45+.35*(n-1))*sp},${y0+(1.2+.9*(n-1))*sp+.9*sp}" stroke="${k}" stroke-width="${.13*sp}" fill="none" stroke-linecap="round"/>`;
     for(let i = 0; i < n; i++){ const yy = y0 + i*.9*sp, xx = x0 - i*.35*sp;
       g += `<circle cx="${xx-.62*sp}" cy="${yy+.22*sp}" r="${.26*sp}" fill="${k}"/><path d="M${xx-.62*sp},${yy+.3*sp} Q${xx-.2*sp},${yy+.4*sp} ${xx},${yy}" stroke="${k}" stroke-width="${.12*sp}" fill="none"/>`; }
-    return g;
-  };
+    return g; };
   const dotG = (x, y) => `<circle cx="${x}" cy="${y}" r="${.2*sp}" fill="${k}"/>`;
-  const allNotes = [];   // 붙임줄을 위해 줄 전체 순서
-  bars.forEach((bar, bi) => {
-    const ev = lay.bars[bi].ev, x0 = barX[bi], x1 = barX[bi+1];
-    if(lay.bars[bi].sim){ // 앞 마디 반복 %
-      const cx = (x0 + x1) / 2;
-      s += `<path d="M${cx-1.25*sp},${yOf(2.2)}L${cx+.55*sp},${yOf(5.8)}L${cx+1.25*sp},${yOf(5.8)}L${cx-.55*sp},${yOf(2.2)}Z" fill="${k}"/>`;
-      s += `<circle cx="${cx-.95*sp}" cy="${yOf(5.1)}" r="${.3*sp}" fill="${k}"/><circle cx="${cx+.95*sp}" cy="${yOf(2.9)}" r="${.3*sp}" fill="${k}"/>`;
-      if(bi < bars.length - 1) s += `<line x1="${x1}" x2="${x1}" y1="${yOf(8)}" y2="${yOf(0)}" stroke="${k}" stroke-width="1"/>`;
-      return;
-    }
-    const padL = R_PAD_L*sp*stretch;
-    const pos = lay.bars[bi].pos;
-    const X = t => x0 + padL + (pos.get(+t.toFixed(3)) ?? 0) * sp * stretch;
-    ev.forEach(e => { e.x = X(e.onset); });
-    // ── 쉼표·머리·점
+  const accG = (x, y) => `<path d="M${x-.4*sp},${y-.42*sp}L${x+.6*sp},${y}L${x-.4*sp},${y+.42*sp}" fill="none" stroke="${k}" stroke-width="${.13*sp}"/>`;
+  const upNotes = [], dnNotes = [], hairs = [];
+  let openHair = null;
+  // 한 성부 그리기 (dir = 1 위 · -1 아래)
+  const voice = (ev, dir, X, time) => {
+    let g = '';
+    const def = dir > 0 ? 's' : 'k';
+    ev.forEach(e => { e.x = X(e.onset); e.ps = (e.inst || [def]).map(posOf); });
     ev.forEach(e => {
-      if(e.rest){ s += restG(e.x, restY, e.base); if(e.dot) s += dotG(e.x + 1.0*sp, yOf(7)); return; }
-      s += head(e.x, snY, e.base);
-      if(e.dot) s += dotG(e.x + 1.05*sp, snY - .5*sp);
-      allNotes.push(e);
+      const ry = dir > 0 ? restUp : restDown;
+      if(e.rest){ g += restG(e.x, ry, e.base); if(e.dot) g += dotG(e.x + 1.0*sp, ry - .5*sp); return; }
+      (e.inst || [def]).forEach(c => { const p = posOf(c), y = yOf(p); g += ledger(e.x, p) + head(e.x, y, e.base, !!R_XHEAD[c]);
+        if(e.dot) g += dotG(e.x + 1.05*sp, (Math.round(p) % 2 === 0 ? y - .5*sp : y)); });
+      (dir > 0 ? upNotes : dnNotes).push(e);
     });
-    // ── 빔 묶음
-    const beatT = 384 / ((R_TIME[opt.time] || [4,4])[1]), [nBeat] = R_TIME[opt.time] || [4,4];
+    // 빔 묶음
+    const [nBeat, den] = R_TIME[time] || [4,4], beatT = 384 / den;
     const halfOK = nBeat === 4 && beatT === 96;
+    const compound = den === 8 && nBeat % 3 === 0;
+    const grp = compound ? 144 : beatT;
     const win = e => {
       if(e.tup) return 'u' + e.tup;
-      const beat = Math.floor((e.onset + 1e-6) / beatT);
-      if(halfOK){ const half = Math.floor(beat / 2), inHalf = ev.filter(x => Math.floor((x.onset + 1e-6) / beatT / 2) === half);
+      const beat = Math.floor((e.onset + 1e-6) / grp);
+      if(halfOK){ const half = Math.floor(beat / 2), inHalf = ev.filter(x => Math.floor((x.onset + 1e-6) / grp / 2) === half);
         if(inHalf.every(x => !x.tup && x.level <= 1)) return 'h' + half; }
       return 'b' + beat;
     };
     const groups = []; let cur = null;
     ev.forEach(e => {
-      const beamable = !e.rest && e.level >= 1;
-      const w = win(e);
+      const beamable = !e.rest && e.level >= 1, w = win(e);
       if(beamable && cur && cur.w === w) cur.notes.push(e);
       else if(beamable){ cur = {w, notes:[e]}; groups.push(cur); }
       else cur = null;
-      if(!beamable) cur = null;
     });
-    const stemX = e => e.x + hx*.92;
-    // ── 기둥 (4분·2분·8분 이하)
-    ev.forEach(e => { if(!e.rest && e.base !== 'w') s += `<line x1="${stemX(e)}" x2="${stemX(e)}" y1="${snY-.15*sp}" y2="${stemTop}" stroke="${k}" stroke-width="${stemW}"/>`; });
-    groups.forEach(g => {
-      const n = g.notes;
-      if(n.length === 1){ // 꼬리
-        const e = n[0], sx = stemX(e);
-        for(let i = 0; i < e.level; i++){ const y = stemTop + i*.85*sp;
-          s += `<path d="M${sx},${y} C${sx+.15*sp},${y+1.0*sp} ${sx+1.25*sp},${y+1.1*sp} ${sx+.85*sp},${y+2.6*sp}" stroke="${k}" stroke-width="${.2*sp}" fill="none"/>`; }
-        return;
-      }
-      const a = stemX(n[0]) - stemW/2, b = stemX(n[n.length-1]) + stemW/2;
-      s += `<rect x="${a}" y="${stemTop}" width="${b-a}" height="${.5*sp}" fill="${k}"/>`;
+    const sX = e => dir > 0 ? e.x + hx*.92 : e.x - hx*.92;
+    const sEnd = dir > 0 ? stemTop : stemBot;
+    ev.forEach(e => { if(e.rest || e.base === 'w') return;
+      const from = dir > 0 ? yOf(Math.min(...e.ps)) - .15*sp : yOf(Math.max(...e.ps)) + .15*sp;
+      g += `<line x1="${sX(e)}" x2="${sX(e)}" y1="${from}" y2="${sEnd}" stroke="${k}" stroke-width="${stemW}"/>`; });
+    groups.forEach(G => {
+      const n = G.notes;
+      if(n.length === 1){ const e = n[0], x = sX(e);
+        for(let i = 0; i < e.level; i++){ const y = sEnd + dir*i*.85*sp;
+          g += `<path d="M${x},${y} C${x+.15*sp},${y+dir*1.0*sp} ${x+1.25*sp},${y+dir*1.1*sp} ${x+.85*sp},${y+dir*2.6*sp}" stroke="${k}" stroke-width="${.2*sp}" fill="none"/>`; }
+        return; }
+      const a = sX(n[0]) - stemW/2, b = sX(n[n.length-1]) + stemW/2, by = y => dir > 0 ? y : y - .5*sp;
+      g += `<rect x="${a}" y="${by(sEnd)}" width="${b-a}" height="${.5*sp}" fill="${k}"/>`;
       for(let L = 2; L <= 3; L++){
-        const y = stemTop + (L-1)*.75*sp;
+        const y = sEnd + dir*(L-1)*.75*sp;
         let i = 0;
         while(i < n.length){
           if(n[i].level < L){ i++; continue; }
           let j = i; while(j + 1 < n.length && n[j+1].level >= L) j++;
-          if(j > i) s += `<rect x="${stemX(n[i])-stemW/2}" y="${y}" width="${stemX(n[j])-stemX(n[i])+stemW}" height="${.5*sp}" fill="${k}"/>`;
+          if(j > i) g += `<rect x="${sX(n[i])-stemW/2}" y="${by(y)}" width="${sX(n[j])-sX(n[i])+stemW}" height="${.5*sp}" fill="${k}"/>`;
           else { const left = i === n.length - 1 || (i > 0 && n[i-1].dot);
-            const len = Math.min(1.0*sp, (left ? stemX(n[i]) - stemX(n[i-1]) : stemX(n[i+1]) - stemX(n[i])) * .5);
-            s += `<rect x="${left ? stemX(n[i]) - len : stemX(n[i]) - stemW/2}" y="${y}" width="${len + stemW/2}" height="${.5*sp}" fill="${k}"/>`; }
+            const len = Math.min(1.0*sp, (left ? sX(n[i]) - sX(n[i-1]) : sX(n[i+1]) - sX(n[i])) * .5);
+            g += `<rect x="${left ? sX(n[i]) - len : sX(n[i]) - stemW/2}" y="${by(y)}" width="${len + stemW/2}" height="${.5*sp}" fill="${k}"/>`; }
           i = j + 1;
         }
       }
     });
-    // ── 롤 빗금 (기둥 위)
+    // 롤 빗금
     ev.forEach(e => { if(e.rest || !e.roll) return;
-      const sx = e.base === 'w' ? e.x : stemX(e);
-      const yc0 = e.base === 'w' ? snY - 1.7*sp : e.level >= 1 ? snY - 1.75*sp : snY - 2.1*sp;
+      const x = e.base === 'w' ? e.x : sX(e), ref = dir > 0 ? yOf(Math.min(...e.ps)) : yOf(Math.max(...e.ps));
+      const yc0 = e.base === 'w' ? ref - dir*1.7*sp : ref - dir*(e.level >= 1 ? 1.75 : 2.1)*sp;
       for(let i = 0; i < e.roll; i++){ const y = yc0 + (i - (e.roll - 1) / 2) * .6*sp;
-        s += `<line x1="${sx-.6*sp}" y1="${y+.28*sp}" x2="${sx+.6*sp}" y2="${y-.28*sp}" stroke="${k}" stroke-width="${.24*sp}"/>`; } });
-    // ── 꾸밈음 (플램 · 드래그)
-    ev.forEach(e => { if(e.rest || !e.grace) return;
-      const n = e.grace, gx = i => e.x - 1.0*sp - (n - i) * 1.05*sp, gy = snY - .25*sp, gt = gy - 2.4*sp, gs = gx0 => gx0 + .36*sp;
+        g += `<line x1="${x-.6*sp}" y1="${y+.28*sp}" x2="${x+.6*sp}" y2="${y-.28*sp}" stroke="${k}" stroke-width="${.24*sp}"/>`; } });
+    // 꾸밈음 (위 성부만)
+    if(dir > 0) ev.forEach(e => { if(e.rest || !e.grace) return;
+      const n = e.grace, gx = i => e.x - 1.0*sp - (n - i) * 1.05*sp, gy = yOf(Math.max(...e.ps)) - .25*sp, gt = gy - 2.4*sp, gs = gx0 => gx0 + .36*sp;
       for(let i = 0; i < n; i++){ const x = gx(i);
-        s += `<path fill="${k}" d="${rEll(x, gy, .4*sp, .29*sp, -20)}"/><line x1="${gs(x)}" x2="${gs(x)}" y1="${gy-.1*sp}" y2="${gt}" stroke="${k}" stroke-width="${.09*sp}"/>`; }
+        g += `<path fill="${k}" d="${rEll(x, gy, .4*sp, .29*sp, -20)}"/><line x1="${gs(x)}" x2="${gs(x)}" y1="${gy-.1*sp}" y2="${gt}" stroke="${k}" stroke-width="${.09*sp}"/>`; }
       if(n === 1){ const x = gs(gx(0));
-        s += `<path d="M${x},${gt} C${x+.1*sp},${gt+.7*sp} ${x+.8*sp},${gt+.75*sp} ${x+.55*sp},${gt+1.7*sp}" stroke="${k}" stroke-width="${.14*sp}" fill="none"/>`;
-        s += `<line x1="${x-.55*sp}" y1="${gt+1.5*sp}" x2="${x+.6*sp}" y2="${gt+.5*sp}" stroke="${k}" stroke-width="${.09*sp}"/>`; }
+        g += `<path d="M${x},${gt} C${x+.1*sp},${gt+.7*sp} ${x+.8*sp},${gt+.75*sp} ${x+.55*sp},${gt+1.7*sp}" stroke="${k}" stroke-width="${.14*sp}" fill="none"/>`;
+        g += `<line x1="${x-.55*sp}" y1="${gt+1.5*sp}" x2="${x+.6*sp}" y2="${gt+.5*sp}" stroke="${k}" stroke-width="${.09*sp}"/>`; }
       else { const a = gs(gx(0)) - .05*sp, b = gs(gx(n-1)) + .05*sp;
-        s += `<rect x="${a}" y="${gt}" width="${b-a}" height="${.3*sp}" fill="${k}"/><rect x="${a}" y="${gt+.55*sp}" width="${b-a}" height="${.3*sp}" fill="${k}"/>`; }
+        g += `<rect x="${a}" y="${gt}" width="${b-a}" height="${.3*sp}" fill="${k}"/><rect x="${a}" y="${gt+.55*sp}" width="${b-a}" height="${.3*sp}" fill="${k}"/>`; }
       const sa = gx(0) - .1*sp, sb = e.x - .35*sp, sy = gy + .55*sp;
-      s += `<path d="M${sa},${sy} Q${(sa+sb)/2},${sy+1.0*sp} ${sb},${sy+.15*sp} Q${(sa+sb)/2},${sy+.75*sp} ${sa},${sy}Z" fill="${k}"/>`; });
-    // ── 셋잇단 숫자
+      g += `<path d="M${sa},${sy} Q${(sa+sb)/2},${sy+1.0*sp} ${sb},${sy+.15*sp} Q${(sa+sb)/2},${sy+.75*sp} ${sa},${sy}Z" fill="${k}"/>`; });
+    // 셋잇단 숫자
     const tups = [...new Set(ev.filter(e => e.tup).map(e => e.tup))];
     tups.forEach(id => { const m = ev.filter(e => e.tup === id); const a = m[0].x, b = m[m.length-1].x + hx, mid = (a + b) / 2;
-      const beamed = groups.some(g => g.notes.length === m.length && g.notes.every(x => x.tup === id));
-      if(!beamed) s += `<path d="M${a-.3*sp},${tupY+.5*sp}V${tupY}H${mid-.8*sp}M${mid+.8*sp},${tupY}H${b+.3*sp}V${tupY+.5*sp}" fill="none" stroke="#333" stroke-width=".8"/>`;
-      s += `<text x="${mid}" y="${tupY+.35*sp}" text-anchor="middle" style="font:italic 700 ${1.5*sp}px Georgia,'Times New Roman',serif" fill="${k}">3</text>`; });
-    // ── 악센트 · 스티킹
+      const beamed = groups.some(G => G.notes.length === m.length && G.notes.every(x => x.tup === id));
+      const ty = dir > 0 ? tupY : stemBot + 1.0*sp;
+      if(!beamed) g += `<path d="M${a-.3*sp},${ty+dir*.5*sp}V${ty}H${mid-.8*sp}M${mid+.8*sp},${ty}H${b+.3*sp}V${ty+dir*.5*sp}" fill="none" stroke="#333" stroke-width=".8"/>`;
+      g += `<text x="${mid}" y="${ty+.35*sp + (dir < 0 ? .5*sp : 0)}" text-anchor="middle" style="font:italic 700 ${1.5*sp}px Georgia,'Times New Roman',serif" fill="${k}">3</text>`; });
+    // 악센트 · 스티킹 · 세기 · 늘임표
     ev.forEach(e => {
-      if(e.acc){ const ay = e.tup ? accY - .6*sp : accY;
-        s += `<path d="M${e.x-.4*sp},${ay-.42*sp}L${e.x+.6*sp},${ay}L${e.x-.4*sp},${ay+.42*sp}" fill="none" stroke="${k}" stroke-width="${.13*sp}"/>`; }
-      if(e.stick) s += `<text x="${e.x}" y="${stY}" text-anchor="middle" style="font:400 ${1.5*sp}px var(--f-body)" fill="#123b2a">${e.stick}</text>`;
-      if(e.count) s += `<text x="${e.x}" y="${cntY}" text-anchor="middle" style="font:400 ${1.45*sp}px var(--f-body)" fill="#555">${rEsc(e.count)}</text>`;
+      if(e.acc){ if(dir > 0) g += accG(e.x, e.tup ? accY - .6*sp : accY); else g += accG(e.x - hx*.92, stemBot + .75*sp); }
+      if(!e.rest && e.inst && e.inst.includes('o')) g += `<circle cx="${dir > 0 ? sX(e) : e.x}" cy="${dir > 0 ? stemTop - .95*sp : stemBot + .95*sp}" r="${.42*sp}" fill="none" stroke="${k}" stroke-width="${.12*sp}"/>`;
+      if(e.stick){ [...e.stick].forEach((c, i) => { const y = stickBelow ? stBelowY + i*1.45*sp : stY - (e.stick.length - 1 - i)*1.45*sp;
+        g += `<text x="${e.x}" y="${y}" text-anchor="middle" style="font:700 ${1.4*sp}px var(--f-body)" fill="#123b2a">${c}</text>`; }); }
+      if(e.count) g += `<text x="${e.x}" y="${cntY}" text-anchor="middle" style="font:400 ${1.45*sp}px var(--f-body)" fill="#555">${rEsc(e.count)}</text>`;
+      if(e.ferm){ const fy = (dir > 0 ? Math.min(accY, stemTop) : yT) - .9*sp;
+        g += `<path d="M${e.x-1.0*sp},${fy} A${1.0*sp},${.9*sp} 0 0 1 ${e.x+1.0*sp},${fy}" fill="none" stroke="${k}" stroke-width="${.18*sp}"/><circle cx="${e.x}" cy="${fy-.25*sp}" r="${.18*sp}" fill="${k}"/>`; }
     });
-    if(lay.bars[bi].label) s += `<text x="${x0 + .4*sp}" y="${cntY - 1.6*sp}" style="font:400 ${1.45*sp}px var(--f-body)" fill="#123b2a">(${rEsc(lay.bars[bi].label)})</text>`;
-    // ── 베이스드럼 (기둥 아래)
-    const be = lay.bars[bi].bev;
-    if(be.length){
-      be.forEach(e => { const x = X(e.onset);
-        if(e.rest){ if(!ev.some(n => n.rest && n.base === e.base && Math.abs(n.onset - e.onset) < 1e-3)) s += restG(x, yOf(2), e.base); return; }
-        s += head(x, bdY, e.base);
-        if(e.base !== 'w'){ const bx = x - hx*.92; s += `<line x1="${bx}" x2="${bx}" y1="${bdY+.15*sp}" y2="${bdY+3.2*sp}" stroke="${k}" stroke-width="${stemW}"/>`;
-          for(let i = 0; i < e.level; i++){ const y = bdY + 3.2*sp - i*.85*sp; s += `<path d="M${bx},${y} C${bx+.15*sp},${y-1.0*sp} ${bx+1.25*sp},${y-1.1*sp} ${bx+.85*sp},${y-2.6*sp}" stroke="${k}" stroke-width="${.2*sp}" fill="none"/>`; } }
-        if(e.dot) s += dotG(x + 1.05*sp, bdY - .5*sp);
-        if(e.acc){ const ay = bdY + 3.85*sp, ax = x - hx*.92; s += `<path d="M${ax-.4*sp},${ay-.38*sp}L${ax+.6*sp},${ay}L${ax-.4*sp},${ay+.38*sp}" fill="none" stroke="${k}" stroke-width="${.13*sp}"/>`; } });
+    return g;
+  };
+  const marks = (e, x) => {   // 셈여림 · 글자 (성부와 상관없이 줄 단위)
+    let g = '';
+    if(e.dyn) g += `<text x="${x}" y="${dynY}" text-anchor="middle" style="font:italic 700 ${1.75*sp}px ${serif}" fill="${k}">${e.dyn}</text>`;
+    if(e.word) g += `<text x="${x}" y="${dynY}" style="font:italic 400 ${1.4*sp}px ${serif}" fill="${k}">${rEsc(e.word)}</text>`;
+    if(e.hairEnd && openHair){ hairs.push([openHair.x, x - .6*sp, openHair.d]); openHair = null; }
+    if(e.hair){ if(openHair) hairs.push([openHair.x, x - .6*sp, openHair.d]); openHair = {x: x + (e.dyn ? 1.6*sp : 0), d: e.hair}; }
+    if(e.txt) g += `<text x="${x}" y="${txtY}" style="font:italic 700 ${1.4*sp}px ${serif}" fill="${k}">${rEsc(e.txt)}</text>`;
+    return g; };
+  let time = opt.time || '4/4';
+  bars.forEach((bar, bi) => {
+    const L = lay.bars[bi];
+    if(L.time) time = L.time;
+    const x0 = barX[bi], x1 = barX[bi+1];
+    const padL = (R_PAD_L + L.extraL)*sp*stretch;
+    if(L.repS) s += repStart(x0 + (bi === 0 ? 0 : .3*sp));
+    if(L.time) s += tsig(x0 + (L.repS ? 2.4*sp : 0) + 1.8*sp, L.time);
+    if(L.label){ const lx = x0 + .4*sp;
+      if(L.box){ const w = (L.label.length * .95 + .9)*sp; s += `<rect x="${lx}" y="${labY - 1.45*sp}" width="${w}" height="${1.9*sp}" rx="${.25*sp}" fill="none" stroke="${k}" stroke-width="${.12*sp}"/><text x="${lx + w/2}" y="${labY}" text-anchor="middle" style="font:700 ${1.4*sp}px var(--f-body)" fill="${k}">${rEsc(L.label)}</text>`; }
+      else s += `<text x="${lx}" y="${labY}" style="font:400 ${1.45*sp}px var(--f-body)" fill="#123b2a">(${rEsc(L.label)})</text>`; }
+    if(L.volta) s += `<path d="M${x0+.3*sp},${volY+1.1*sp}V${volY-.9*sp}H${x1-.8*sp}" fill="none" stroke="${k}" stroke-width="${.12*sp}"/><text x="${x0+.8*sp}" y="${volY+.5*sp}" style="font:700 ${1.3*sp}px var(--f-body)" fill="${k}">${rEsc(L.volta)}.</text>`;
+    const inner0 = x0 + padL, inner1 = x1 - (R_PAD_R + L.extraR)*sp*stretch;
+    if(L.sim){ const cx = (inner0 + inner1) / 2, mY = yOf(4);
+      s += `<path d="M${cx-1.25*sp},${mY+1.8*sp}L${cx+.55*sp},${mY-1.8*sp}L${cx+1.25*sp},${mY-1.8*sp}L${cx-.55*sp},${mY+1.8*sp}Z" fill="${k}"/>`;
+      s += `<circle cx="${cx-.95*sp}" cy="${mY-1.1*sp}" r="${.3*sp}" fill="${k}"/><circle cx="${cx+.95*sp}" cy="${mY+1.1*sp}" r="${.3*sp}" fill="${k}"/>`; }
+    else if(L.multi){ const a = inner0 + .6*sp, b = inner1 - .6*sp, mY = yOf(4);
+      s += `<rect x="${a}" y="${mY - .55*sp}" width="${b-a}" height="${1.1*sp}" fill="${k}"/><line x1="${a}" x2="${a}" y1="${mY-1.2*sp}" y2="${mY+1.2*sp}" stroke="${k}" stroke-width="${.15*sp}"/><line x1="${b}" x2="${b}" y1="${mY-1.2*sp}" y2="${mY+1.2*sp}" stroke="${k}" stroke-width="${.15*sp}"/>`;
+      s += `<text x="${(a+b)/2}" y="${(one ? yOf(4) - 1.7*sp : yOf(8) - .8*sp)}" text-anchor="middle" style="font:900 ${2.2*sp}px ${serif}" fill="${k}">${L.multi}</text>`; }
+    else if(!L.empty){
+      const pos = L.pos;
+      const X = t => inner0 + (pos.get(+t.toFixed(3)) ?? 0) * sp * stretch;
+      s += voice(L.ev, 1, X, time);
+      if(L.bev.length) s += voice(L.bev, -1, X, time);
+      L.ev.forEach(e => { s += marks(e, e.x); });
+      L.bev.forEach(e => { s += marks(e, e.x); });
     }
-    // ── 마디선
-    const xe = x1;
-    if(bi < bars.length - 1) s += `<line x1="${xe}" x2="${xe}" y1="${yOf(8)}" y2="${yOf(0)}" stroke="${k}" stroke-width="1"/>`;
+    if(L.tail) s += marks(L.tail, (L.sim || L.empty || L.multi) ? inner0 : inner1);
+    // 마디선
+    if(L.repE) s += repEnd(bi < bars.length - 1 ? x1 : W - post);
+    else if(bi < bars.length - 1 && !lay.bars[bi+1].repS) s += `<line x1="${x1}" x2="${x1}" y1="${yT}" y2="${yB}" stroke="${k}" stroke-width="1"/>`;
   });
-  // ── 붙임줄 (스네어 아래쪽 곡선)
-  allNotes.forEach((e, i) => { if(!e.tie) return; const nx = allNotes[i+1];
-    const a = e.x + .5*sp, b = nx ? nx.x - .5*sp : W - post, y = snY + .65*sp;
-    s += `<path d="M${a},${y} Q${(a+b)/2},${y+1.3*sp} ${b},${y} Q${(a+b)/2},${y+.95*sp} ${a},${y}Z" fill="${k}"/>`; });
+  // 점점 세게 · 여리게
+  if(openHair){ hairs.push([openHair.x, W - post - .6*sp, openHair.d]); openHair = null; }
+  hairs.forEach(([a, b, d]) => { if(b - a < sp) return; const h = .7*sp, y = dynY - .55*sp;
+    s += d === '<' ? `<path d="M${b},${y-h}L${a},${y}L${b},${y+h}" fill="none" stroke="${k}" stroke-width="${.1*sp}"/>` : `<path d="M${a},${y-h}L${b},${y}L${a},${y+h}" fill="none" stroke="${k}" stroke-width="${.1*sp}"/>`; });
+  // 붙임줄
+  const ties = arr => arr.forEach((e, i) => { if(!e.tie) return; const nx = arr[i+1];
+    const a = e.x + .5*sp, b = nx ? nx.x - .5*sp : W - post;
+    const y = yOf(Math.min(...e.ps)) + .65*sp, c = 1.3*sp;
+    s += `<path d="M${a},${y} Q${(a+b)/2},${y+c} ${b},${y} Q${(a+b)/2},${y+c*.73} ${a},${y}Z" fill="${k}"/>`; });
+  ties(upNotes); ties(dnNotes);
   // ── 줄 끝
-  const ex = W - post;
-  if(item.repeat) s += `<circle cx="${ex-1.4*sp}" cy="${yOf(5)}" r="${.22*sp}" fill="${k}"/><circle cx="${ex-1.4*sp}" cy="${yOf(3)}" r="${.22*sp}" fill="${k}"/><line x1="${ex-.9*sp}" x2="${ex-.9*sp}" y1="${yOf(8)}" y2="${yOf(0)}" stroke="${k}" stroke-width="1"/><rect x="${ex-.45*sp}" y="${yOf(8)}" width="${.45*sp}" height="${4*sp}" fill="${k}"/>`;
-  else if(opt.final) s += `<line x1="${ex-.9*sp}" x2="${ex-.9*sp}" y1="${yOf(8)}" y2="${yOf(0)}" stroke="${k}" stroke-width="1"/><rect x="${ex-.45*sp}" y="${yOf(8)}" width="${.45*sp}" height="${4*sp}" fill="${k}"/>`;
-  else s += `<line x1="${ex}" x2="${ex}" y1="${yOf(8)}" y2="${yOf(0)}" stroke="${k}" stroke-width="1"/>`;
-  return {svg: s + '</svg>', H};
+  const ex = W - post, last = lay.bars[lay.bars.length - 1];
+  if(last && last.repE){ /* 위에서 그림 */ }
+  else if(item.repeat) s += repEnd(ex);
+  else if(opt.final) s += `<line x1="${ex-.9*sp}" x2="${ex-.9*sp}" y1="${yT}" y2="${yB}" stroke="${k}" stroke-width="1"/><rect x="${ex-.45*sp}" y="${yT}" width="${.45*sp}" height="${yB-yT}" fill="${k}"/>`;
+  else if(item.dbl) s += `<line x1="${ex-.6*sp}" x2="${ex-.6*sp}" y1="${yT}" y2="${yB}" stroke="${k}" stroke-width="1"/><line x1="${ex}" x2="${ex}" y1="${yT}" y2="${yB}" stroke="${k}" stroke-width="1"/>`;
+  else s += `<line x1="${ex}" x2="${ex}" y1="${yT}" y2="${yB}" stroke="${k}" stroke-width="1"/>`;
+  return {svg: s + '</svg>', H, endTime: lay.endTime};
 }
 
 // 페이지 높이에 맞게 크기 정하기
@@ -816,31 +966,35 @@ function rDrawLine(item, W, sp, opt){
 function rShort(pg, it){ return pg.cols === 2 && it.bars && it.bars.length === 1; }
 function rPageScale(pg, W){
   const lw = (W - 24) / 2;
-  let spW = 7.2, nHead = 0, nShort = 0, nLong = 0, stick = false, count = false, label = false, t = pg.time;
+  let spW = 7.2, nHead = 0, nShort = 0, nLong = 0, t = pg.time, sumH = 0;
+  const shortH = [];
   pg.items.forEach(it => {
-    if(it.h){ nHead++; if(it.time) t = it.time; return; }
+    if(it.h){ nHead += it.sub ? 1.6 : 1; if(it.time) t = it.time; return; }
     const short = rShort(pg, it); short ? nShort++ : nLong++;
     const lay = rLayoutLine(it, {time: it.time || t, bass: pg.bass});
-    if(lay.bars.some(b => b.ev.some(e => e.stick))) stick = true;
-    if(lay.bars.some(b => b.ev.some(e => e.count))) count = true;
-    if(lay.bars.some(b => b.label)) label = true;
+    t = lay.endTime;
+    const sp = rSpace(rLineFeatures(lay, it), pg.stick === 'below'), h = sp.above + 4 + sp.below;
+    if(short) shortH.push(h); else sumH += h;
     spW = Math.min(spW, (short ? lw : W) / (lay.units + 6.2 + (it.repeat ? 2.6 : 0)));
   });
-  const rows = Math.ceil(nShort / 2) + nLong, avail = 900 - nHead * 34, per = (stick ? 1.6 : 0) + (count ? 1.7 : 0) + (label ? 1.6 : 0) + 12.2;
-  const spH = (avail / Math.max(1, rows) - 6) / per;
-  return {sp: Math.max(3.4, Math.min(spW, spH)), stick, count, label, lw};
+  const half = Math.ceil(shortH.length / 2);
+  for(let i = 0; i < half; i++) sumH += Math.max(shortH[i] || 0, shortH[i + half] || 0);
+  const rows = half + nLong, avail = 900 - nHead * 34 - rows * 4;
+  const spH = avail / Math.max(1, sumH);
+  return {sp: Math.max(3.0, Math.min(spW, spH)), lw};
 }
 
 function rhythmPageHTML(pg, footer, escf){
   const E = escf || rEsc;
   const W = 794 - 148 - 34;
-  const {sp, stick, count, label, lw} = rPageScale(pg, W);
-  let first = true, body = '', t = pg.time, shortBuf = [];
+  const {sp, lw} = rPageScale(pg, W);
+  let first = true, body = '', t = pg.time, shortBuf = [], sys = null;
+  const opt0 = {bass: pg.bass, staff: pg.staff === 1 ? 1 : 5, stickBelow: pg.stick === 'below'};
   const line = (it, i, showTime, width, time) => {
     const next = pg.items[i+1];
-    const final = !!it.n || !next || !!next.h;
-    const {svg} = rDrawLine(it, width, sp, {time, bass: pg.bass, showTime, final, hasStick: stick, hasCount: count, hasLabel: label});
-    return `<div class="rh-line"><span class="rh-n">${E(it.n || '')}</span>${svg}</div>`;
+    const final = it.end === true || (it.end !== false && (!next || !!next.h || (!!it.n && !(next && next.sys === 'b'))));
+    const r = rDrawLine(it, width, sp, {...opt0, staff: it.staff === 1 ? 1 : it.staff === 5 ? 5 : opt0.staff, time, showTime, final});
+    return {html: `<div class="rh-line"><span class="rh-n">${E(it.n || '')}</span>${r.svg}</div>`, endTime: r.endTime};
   };
   const flush = () => {
     if(!shortBuf.length) return;
@@ -849,13 +1003,21 @@ function rhythmPageHTML(pg, footer, escf){
     body += `<div class="rh-cols" style="flex-grow:${half}">${col(shortBuf.slice(0, half))}${col(shortBuf.slice(half))}</div>`;
     shortBuf = [];
   };
+  const nShortAll = pg.items.filter(x => rShort(pg, x)).length;
   pg.items.forEach((it, i) => {
-    if(it.h){ flush(); body += `<div class="rh-h">${E(it.h)}</div>`; first = true; if(it.time) t = it.time; return; }
+    if(it.h){ flush(); if(sys){ body += sys.join(''); sys = null; }
+      body += `<div class="rh-h">${E(it.h)}</div>${it.sub ? `<div class="rh-sub">${E(it.sub)}</div>` : ''}`; first = true; if(it.time) t = it.time; return; }
     const time = it.time || t;
-    if(rShort(pg, it)){ shortBuf.push(line(it, i, shortBuf.length === 0 || shortBuf.length === Math.ceil(pg.items.filter(x => rShort(pg, x)).length / 2), lw, time)); first = false; return; }
+    if(rShort(pg, it)){ const r = line(it, i, shortBuf.length === 0 || shortBuf.length === Math.ceil(nShortAll / 2), lw, time); shortBuf.push(r.html); t = r.endTime; first = false; return; }
     flush();
-    body += line(it, i, first || !!it.time, W, time); first = false;
+    const r = line(it, i, first || !!it.time || (it.sys === 'b' && sys && sys.showT), W, time); t = r.endTime;
+    if(it.sys === 'a'){ if(sys) body += sys.join(''); sys = [r.html]; sys.showT = first || !!it.time; first = false; return; }
+    first = false;
+    if(it.sys === 'b' && sys){ body += `<div class="rh-sys">${sys.join('')}${r.html}</div>`; sys = null; return; }
+    if(sys){ body += sys.join(''); sys = null; }
+    body += r.html;
   });
+  if(sys) body += sys.join('');
   flush();
   return `<div class="page pg-rhythm"><div class="rail-wm"><span>Rhythm House</span></div>
     <div class="hd"><div><div class="eye">${E(pg.eye)}</div><div class="ttl">${E(pg.title)}</div></div>${pg.chip ? `<div class="pchip">${E(pg.chip)}</div>` : ''}</div>
@@ -866,29 +1028,49 @@ function rhythmPageHTML(pg, footer, escf){
 // 리듬 페이지 검사
 function validateRhythm(o, label){
   const errs = [], time = R_TIME[o.time] ? o.time : (o.time ? null : '4/4');
-  if(!time) errs.push(`${label}: 박자(time) "${o.time}" 는 지원하지 않아요 (4/4 · 3/4 · 2/4 · 2/2 · 6/8 · 12/8)`);
-  let curT = rBarTicks(time || '4/4');
+  if(!time) errs.push(`${label}: 박자(time) "${o.time}" 는 지원하지 않아요 (${Object.keys(R_TIME).join(' · ')})`);
+  let curT = time || '4/4';
   if(!Array.isArray(o.items) || !o.items.length){ errs.push(`${label}: 줄(items)이 없어요`); return {errs}; }
   if(o.items.length > 24) errs.push(`${label}: 한 페이지에 줄은 24개까지예요`);
   const items = [];
+  const str = (v, n) => String(v).slice(0, n);
   o.items.forEach((it, li) => {
     const w = `${label} ${li+1}번째 줄`;
-    if(it && it.h){ const h = {h: String(it.h).slice(0, 30)};
-      if(it.time){ if(R_TIME[it.time]){ h.time = it.time; curT = rBarTicks(it.time); } else errs.push(`${w}: 박자 "${it.time}" 는 지원하지 않아요`); }
+    if(it && it.h){ const h = {h: str(it.h, 40)}; if(it.sub) h.sub = str(it.sub, 80);
+      if(it.time){ if(R_TIME[it.time]){ h.time = it.time; curT = it.time; } else errs.push(`${w}: 박자 "${it.time}" 는 지원하지 않아요`); }
       items.push(h); return; }
-    if(!it || !Array.isArray(it.bars) || !it.bars.length || it.bars.length > 8){ errs.push(`${w}: 마디(bars)는 1~8개여야 해요`); return; }
+    if(!it || !Array.isArray(it.bars) || !it.bars.length || it.bars.length > 10){ errs.push(`${w}: 마디(bars)는 1~10개여야 해요`); return; }
+    if(it.time){ if(R_TIME[it.time]) curT = it.time; else errs.push(`${w}: 박자 "${it.time}" 는 지원하지 않아요`); }
     const bars = it.bars.map(b => String(b).trim().replace(/\s+/g, ' '));
-    bars.forEach((b, bi) => { const r = rParseBar(b, errs, `${w} ${bi+1}마디`); if(r.sim){ if(bi === 0 && !items.some(x => x.bars)) errs.push(`${w} 1마디: 반복(%) 앞에 마디가 없어요`); return; } if(Math.abs(r.total - curT) > 0.5) errs.push(`${w} ${bi+1}마디: 길이가 ${(r.total/96).toFixed(2)}박이에요 (${curT/96}박이어야 해요)`); });
-    const out = {bars}; if(it.n != null && it.n !== '') out.n = String(it.n).slice(0, 6);
+    const barTimes = [], skip = [];
+    bars.forEach((b, bi) => { const r = rParseBar(b, errs, `${w} ${bi+1}마디`);
+      if(r.time) curT = r.time;
+      barTimes.push(curT); skip.push(!!(r.sim || r.empty || r.multi || r.free));
+      if(r.sim){ if(bi === 0 && !items.some(x => x.bars)) errs.push(`${w} 1마디: 반복(%) 앞에 마디가 없어요`); return; }
+      if(r.empty || r.multi || r.free) return;
+      const need = rBarTicks(curT);
+      if(Math.abs(r.total - need) > 0.5) errs.push(`${w} ${bi+1}마디: 길이가 ${(r.total/96).toFixed(2)}박이에요 (${need/96}박이어야 해요)`); });
+    const out = {bars}; if(it.n != null && it.n !== '') out.n = str(it.n, 6);
+    if(it.time && R_TIME[it.time]) out.time = it.time;
     if(it.repeat === true) out.repeat = true;
+    if(it.dbl === true) out.dbl = true;
+    if(it.staff === 1 || it.staff === 5) out.staff = it.staff;
+    if(it.end === true || it.end === false) out.end = it.end;
+    if(it.sys === 'a' || it.sys === 'b') out.sys = it.sys;
+    ['tempo','above','below'].forEach(k => { if(it[k]) out[k] = str(it[k], 40); });
     if(it.bass != null){
-      if(!Array.isArray(it.bass) || it.bass.length !== bars.length) errs.push(`${w}: 베이스(bass) 마디 수가 다른 줄과 달라요`);
+      if(!Array.isArray(it.bass) || it.bass.length !== bars.length) errs.push(`${w}: 아래 성부(bass) 마디 수가 위 성부와 달라요`);
       else { out.bass = it.bass.map(b => String(b).trim().replace(/\s+/g, ' '));
-        out.bass.forEach((b, bi) => { const r = rParseBar(b, errs, `${w} 베이스 ${bi+1}마디`); if(r.sim || bars[bi] === '%') return; if(Math.abs(r.total - curT) > 0.5) errs.push(`${w} 베이스 ${bi+1}마디: 길이가 맞지 않아요`); }); }
+        out.bass.forEach((b, bi) => { const r = rParseBar(b, errs, `${w} 아래 ${bi+1}마디`);
+          if(r.sim || r.empty || r.multi || r.free || skip[bi]) return;
+          if(Math.abs(r.total - rBarTicks(barTimes[bi])) > 0.5) errs.push(`${w} 아래 ${bi+1}마디: 길이가 ${(r.total/96).toFixed(2)}박이에요`); }); }
     }
     items.push(out);
   });
-  return {errs, items, time: time || '4/4', bass: o.bass === 'beat' ? 'beat' : 'none', cols: o.cols === 2 ? 2 : 1};
+  const res = {errs, items, time: time || '4/4', bass: o.bass === 'beat' ? 'beat' : 'none', cols: o.cols === 2 ? 2 : 1};
+  if(o.staff === 1) res.staff = 1;
+  if(o.stick === 'below') res.stick = 'below';
+  return res;
 }
 
 function paperHTML(pg, width){
@@ -910,6 +1092,8 @@ function validateScore(o, i){
     const r = validateRhythm(o, label); errs.push(...r.errs);
     const clean = {id, title, book: String(o.book || '기타').trim(), eye: String(o.eye || '').trim(), chip: String(o.chip || '').trim(), part: String(o.part || '').trim().slice(0, 40),
                    src: String(o.src || '').trim(), order: Number(o.order) || 0, kind: 'rhythm', time: r.time || '4/4', bass: r.bass || 'none', cols: r.cols || 1, items: r.items || []};
+    if(r.staff === 1) clean.staff = 1;
+    if(r.stick === 'below') clean.stick = 'below';
     return {errs, clean};
   }
   if(!Array.isArray(o.steps) || !o.steps.length){ errs.push(`${label}: 단계(steps)가 없어요`); return {errs}; }
