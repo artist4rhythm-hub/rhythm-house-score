@@ -2,7 +2,7 @@
 // 앱 껍데기(화면 · 글씨체 · 로고)만 캐시하고, 악보 데이터(Firebase)는 항상 네트워크에서 가져옵니다.
 // 파일을 고쳐 올릴 때는 아래 버전 숫자를 하나 올려 주세요.
 
-const CACHE = 'rh-score-v4';
+const CACHE = 'rh-score-v5';
 const SHELL = ['./', './index.html', './manifest.json', './logo.png', './icon-192.png', './icon-512.png',
                './fonts/Cafe24Danjunghae-v2.0.woff2', './fonts/Cafe24Simplehae-v2.0.woff2', './fonts/Cafe24Lovingu.ttf'];
 
@@ -20,6 +20,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;   // Firebase · 구글 요청은 건드리지 않는다
   if (e.request.method !== 'GET') return;
+  if (url.pathname.endsWith('/version.json')) return;   // 새 버전 확인은 늘 네트워크로
 
   // 글씨체는 캐시 우선 (크고 바뀌지 않음)
   if (url.pathname.includes('/fonts/')) {
