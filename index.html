@@ -104,6 +104,28 @@ a{color:var(--g)}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .group{display:flex;flex-direction:column;gap:4px}
 .group .gh{font-size:12px;letter-spacing:.12em;color:var(--muted);padding:6px 4px 2px}
+.books{display:flex;gap:6px;flex-wrap:wrap}
+.books .chip b{font-weight:400;opacity:.7;margin-left:6px;font-size:12px}
+.part{border-top:1px solid var(--line)}
+.part:last-child{border-bottom:1px solid var(--line)}
+.ph{display:flex;align-items:center;gap:10px;width:100%;padding:14px 6px;background:none;border:0;text-align:left}
+.ph .pn{flex:1;font-family:var(--f-title);font-size:17px}
+.ph .pc{font-size:12px;color:var(--muted)}
+.ph svg{width:16px;height:16px;flex:none;transition:transform .15s;color:var(--muted)}
+.ph[aria-expanded="true"] svg{transform:rotate(90deg)}
+.ph:hover{background:#F6F8F7}
+.pitems{display:flex;flex-direction:column;gap:2px;padding:0 0 12px}
+.row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;border:1.5px solid transparent;background:none;text-align:left;width:100%;font-size:15px}
+.row:hover{background:#F6F8F7}
+.row[aria-current="true"]{background:var(--g-soft);border-color:var(--g)}
+.row .rt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .rp{font-size:12px;color:var(--muted);white-space:nowrap}
+.mpart{border-top:1px solid var(--line)}
+.mpart summary{display:flex;align-items:center;gap:10px;padding:12px 4px;cursor:pointer;list-style:none}
+.mpart summary::-webkit-details-marker{display:none}
+.mpart summary .pn{flex:1;font-family:var(--f-title);font-size:16px}
+.mpart summary .pc{font-size:12px;color:var(--muted)}
+.mbook{font-size:12px;letter-spacing:.12em;color:var(--muted);padding:14px 4px 4px}
 .item{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:12px;border:1.5px solid transparent;
   background:transparent;text-align:left;width:100%}
 .item:hover{background:#F6F8F7}
@@ -458,6 +480,9 @@ function pageHTML(pg, footer){
 //    악센트 >  · 다음 음과 붙임줄 ~  · 스티킹 /R /L
 //    셋잇단: 3[ e e e ]   (괄호 안 길이 합이 2/3로 줄어듦)
 //    세기 표시: 뒤에 @글자 (q@1  e@+  e@2+) · 마디 앞 표시: #A → (A)
+//    꾸밈음: 앞에 g (gq> 플램 · ggq> 드래그 · gggq 3개)
+//    롤 빗금: 점 뒤에 :1 :2 :3  (h:3~  e>:1)
+//    앞 마디 반복: 마디 전체를 %
 //  예) "q re e q. e"   "3[ e> e e ] 3[ e e e ] h"
 // ══════════════════════════════════════════════════════════════
 const R_TICKS = {w:384, h:192, q:96, e:48, s:24, t:12};
@@ -467,13 +492,16 @@ function rBarTicks(time){ const [n, d] = R_TIME[time] || [4,4]; return n * 384 /
 
 // 토큰 하나 읽기 → {rest, base, dot, acc, tie, stick} 또는 null
 function rParseTok(t){
-  const m = /^(r?)([whqest])(\.?)([>~]*)(?:\/([RLrl]))?([>~]*)(?:@([^\s@>~\/]{1,4}))?([>~]*)$/.exec(t);
+  const rm = /:([1-3])/.exec(t), roll = rm ? +rm[1] : 0;
+  if(rm) t = t.replace(rm[0], '');
+  const m = /^(g{0,3})(r?)([whqest])(\.?)()([>~]*)(?:\/([RLrl]))?([>~]*)(?:@([^\s@>~\/:]{1,4}))?([>~]*)$/.exec(t);
   if(!m) return null;
-  const mods = m[4] + m[6] + m[8];
-  return {rest: m[1] === 'r', base: m[2], dot: m[3] === '.', acc: mods.includes('>'), tie: mods.includes('~'), stick: m[5] ? m[5].toUpperCase() : '', count: m[7] || ''};
+  const mods = m[6] + m[8] + m[10];
+  return {grace: m[1].length, rest: m[2] === 'r', base: m[3], dot: m[4] === '.', roll, acc: mods.includes('>'), tie: mods.includes('~'), stick: m[7] ? m[7].toUpperCase() : '', count: m[9] || ''};
 }
 // 마디 문자열 → 이벤트 목록 (onset · ticks). 오류는 errs에
 function rParseBar(str, errs, where){
+  if(String(str).trim() === '%') return {ev: [], total: null, label: '', sim: true};
   const toks = String(str).replace(/3\[/g, ' 3[ ').replace(/\]/g, ' ] ').trim().split(/\s+/).filter(Boolean);
   const ev = []; let t = 0, tup = null, tupId = 0;
   let label = '';
@@ -483,7 +511,7 @@ function rParseBar(str, errs, where){
     if(tok === ']'){ if(!tup){ errs.push(`${where}: 닫는 괄호 ] 가 남아요`); continue; } tup.end = ev.length - 1; for(let i = tup.start; i <= tup.end; i++) ev[i].tupEnd = tup.end; tup = null; continue; }
     const p = rParseTok(tok);
     if(!p){ errs.push(`${where}: "${tok}" 는 읽을 수 없는 음표예요`); continue; }
-    if(p.rest && (p.tie || p.acc)) errs.push(`${where}: 쉼표 "${tok}" 에는 악센트·붙임줄을 달 수 없어요`);
+    if(p.rest && (p.tie || p.acc || p.grace || p.roll)) errs.push(`${where}: 쉼표 "${tok}" 에는 악센트·붙임줄·꾸밈음·롤을 달 수 없어요`);
     let d = R_TICKS[p.base] * (p.dot ? 1.5 : 1);
     if(tup) d = d * 2 / 3;
     ev.push({...p, onset: t, ticks: d, level: R_LEVEL[p.base], tup: tup ? tup.id : 0, tupStart: tup ? tup.start : -1});
@@ -504,13 +532,17 @@ const R_PAD_L = 1.3, R_PAD_R = 1.0;
 function rLayoutLine(item, opt){
   const barT = rBarTicks(opt && opt.time), [nB, dB] = R_TIME[(opt && opt.time)] || [4,4];
   const bars = item.bars.map((b, bi) => {
-    const {ev, label} = rParseBar(b, [], '');
+    const {ev, label, sim} = rParseBar(b, [], '');
+    if(sim) return {ev: [], bev: [], pos: new Map(), units: 5.5, label: '', sim: true};
     const bassStr = item.bass ? item.bass[bi] : (opt && opt.bass === 'beat' ? Array(Math.max(1, Math.round(barT / 96))).fill('q').join(' ') : '');
     const bev = bassStr ? rParseBar(bassStr, [], '').ev : [];
     // 스네어와 베이스의 모든 시작점을 모아 간격을 정함
     const ons = [...new Set(ev.map(e => +e.onset.toFixed(3)).concat(bev.map(e => +e.onset.toFixed(3))))].sort((a, c) => a - c);
     const pos = new Map(); let u = 0;
-    ons.forEach((o, i) => { pos.set(o, u); u += rWeight((i + 1 < ons.length ? ons[i+1] : barT) - o); });
+    ons.forEach((o, i) => {
+      const g = Math.max(0, ...ev.filter(e => Math.abs(e.onset - o) < 1e-3).map(e => e.grace || 0));
+      if(g) u += .9 + g * 1.05;   // 꾸밈음 자리
+      pos.set(o, u); u += rWeight((i + 1 < ons.length ? ons[i+1] : barT) - o); });
     return {ev, bev, pos, units: u, label};
   });
   return {bars, units: bars.reduce((a, b) => a + b.units + R_PAD_L + R_PAD_R, 0)};
@@ -519,7 +551,7 @@ function rLayoutLine(item, opt){
 // 한 줄(여러 마디) 그리기
 function rDrawLine(item, W, sp, opt){
   const k = '#111', bars = item.bars, barT = rBarTicks(opt.time);
-  const above = (opt.hasStick ? 1.6 : 0) + (opt.hasCount ? 1.7 : 0) + (opt.hasLabel ? 1.6 : 0) + 4.6, below = 3.6;
+  const above = (opt.hasStick ? 1.6 : 0) + (opt.hasCount ? 1.7 : 0) + (opt.hasLabel ? 1.6 : 0) + 4.6, below = (item.bass || []).some(b => /[a-z]\.?(:\d)?>/.test(b)) ? 4.3 : 3.6;
   const top = above*sp, bot = top + 4*sp, H = bot + below*sp;
   const yOf = p => bot - p*sp/2;
   const snY = yOf(5), bdY = yOf(1), restY = yOf(6.5), stemTop = snY - 3.6*sp, accY = stemTop - 1.25*sp, tupY = stemTop - 0.75*sp, stY = accY - 1.3*sp, cntY = stY - (opt.hasStick ? 1.6*sp : 0) + (opt.hasStick ? 0 : 0.2*sp);
@@ -554,6 +586,13 @@ function rDrawLine(item, W, sp, opt){
   const allNotes = [];   // 붙임줄을 위해 줄 전체 순서
   bars.forEach((bar, bi) => {
     const ev = lay.bars[bi].ev, x0 = barX[bi], x1 = barX[bi+1];
+    if(lay.bars[bi].sim){ // 앞 마디 반복 %
+      const cx = (x0 + x1) / 2;
+      s += `<path d="M${cx-1.25*sp},${yOf(2.2)}L${cx+.55*sp},${yOf(5.8)}L${cx+1.25*sp},${yOf(5.8)}L${cx-.55*sp},${yOf(2.2)}Z" fill="${k}"/>`;
+      s += `<circle cx="${cx-.95*sp}" cy="${yOf(5.1)}" r="${.3*sp}" fill="${k}"/><circle cx="${cx+.95*sp}" cy="${yOf(2.9)}" r="${.3*sp}" fill="${k}"/>`;
+      if(bi < bars.length - 1) s += `<line x1="${x1}" x2="${x1}" y1="${yOf(8)}" y2="${yOf(0)}" stroke="${k}" stroke-width="1"/>`;
+      return;
+    }
     const padL = R_PAD_L*sp*stretch;
     const pos = lay.bars[bi].pos;
     const X = t => x0 + padL + (pos.get(+t.toFixed(3)) ?? 0) * sp * stretch;
@@ -611,6 +650,24 @@ function rDrawLine(item, W, sp, opt){
         }
       }
     });
+    // ── 롤 빗금 (기둥 위)
+    ev.forEach(e => { if(e.rest || !e.roll) return;
+      const sx = e.base === 'w' ? e.x : stemX(e);
+      const yc0 = e.base === 'w' ? snY - 1.7*sp : e.level >= 1 ? snY - 1.75*sp : snY - 2.1*sp;
+      for(let i = 0; i < e.roll; i++){ const y = yc0 + (i - (e.roll - 1) / 2) * .6*sp;
+        s += `<line x1="${sx-.6*sp}" y1="${y+.28*sp}" x2="${sx+.6*sp}" y2="${y-.28*sp}" stroke="${k}" stroke-width="${.24*sp}"/>`; } });
+    // ── 꾸밈음 (플램 · 드래그)
+    ev.forEach(e => { if(e.rest || !e.grace) return;
+      const n = e.grace, gx = i => e.x - 1.0*sp - (n - i) * 1.05*sp, gy = snY - .25*sp, gt = gy - 2.4*sp, gs = gx0 => gx0 + .36*sp;
+      for(let i = 0; i < n; i++){ const x = gx(i);
+        s += `<path fill="${k}" d="${rEll(x, gy, .4*sp, .29*sp, -20)}"/><line x1="${gs(x)}" x2="${gs(x)}" y1="${gy-.1*sp}" y2="${gt}" stroke="${k}" stroke-width="${.09*sp}"/>`; }
+      if(n === 1){ const x = gs(gx(0));
+        s += `<path d="M${x},${gt} C${x+.1*sp},${gt+.7*sp} ${x+.8*sp},${gt+.75*sp} ${x+.55*sp},${gt+1.7*sp}" stroke="${k}" stroke-width="${.14*sp}" fill="none"/>`;
+        s += `<line x1="${x-.55*sp}" y1="${gt+1.5*sp}" x2="${x+.6*sp}" y2="${gt+.5*sp}" stroke="${k}" stroke-width="${.09*sp}"/>`; }
+      else { const a = gs(gx(0)) - .05*sp, b = gs(gx(n-1)) + .05*sp;
+        s += `<rect x="${a}" y="${gt}" width="${b-a}" height="${.3*sp}" fill="${k}"/><rect x="${a}" y="${gt+.55*sp}" width="${b-a}" height="${.3*sp}" fill="${k}"/>`; }
+      const sa = gx(0) - .1*sp, sb = e.x - .35*sp, sy = gy + .55*sp;
+      s += `<path d="M${sa},${sy} Q${(sa+sb)/2},${sy+1.0*sp} ${sb},${sy+.15*sp} Q${(sa+sb)/2},${sy+.75*sp} ${sa},${sy}Z" fill="${k}"/>`; });
     // ── 셋잇단 숫자
     const tups = [...new Set(ev.filter(e => e.tup).map(e => e.tup))];
     tups.forEach(id => { const m = ev.filter(e => e.tup === id); const a = m[0].x, b = m[m.length-1].x + hx, mid = (a + b) / 2;
@@ -629,11 +686,12 @@ function rDrawLine(item, W, sp, opt){
     const be = lay.bars[bi].bev;
     if(be.length){
       be.forEach(e => { const x = X(e.onset);
-        if(e.rest){ s += restG(x, yOf(2), e.base); return; }
+        if(e.rest){ if(!ev.some(n => n.rest && n.base === e.base && Math.abs(n.onset - e.onset) < 1e-3)) s += restG(x, yOf(2), e.base); return; }
         s += head(x, bdY, e.base);
         if(e.base !== 'w'){ const bx = x - hx*.92; s += `<line x1="${bx}" x2="${bx}" y1="${bdY+.15*sp}" y2="${bdY+3.2*sp}" stroke="${k}" stroke-width="${stemW}"/>`;
           for(let i = 0; i < e.level; i++){ const y = bdY + 3.2*sp - i*.85*sp; s += `<path d="M${bx},${y} C${bx+.15*sp},${y-1.0*sp} ${bx+1.25*sp},${y-1.1*sp} ${bx+.85*sp},${y-2.6*sp}" stroke="${k}" stroke-width="${.2*sp}" fill="none"/>`; } }
-        if(e.dot) s += dotG(x + 1.05*sp, bdY - .5*sp); });
+        if(e.dot) s += dotG(x + 1.05*sp, bdY - .5*sp);
+        if(e.acc){ const ay = bdY + 3.85*sp, ax = x - hx*.92; s += `<path d="M${ax-.4*sp},${ay-.38*sp}L${ax+.6*sp},${ay}L${ax-.4*sp},${ay+.38*sp}" fill="none" stroke="${k}" stroke-width="${.13*sp}"/>`; } });
     }
     // ── 마디선
     const xe = x1;
@@ -718,13 +776,13 @@ function validateRhythm(o, label){
       items.push(h); return; }
     if(!it || !Array.isArray(it.bars) || !it.bars.length || it.bars.length > 8){ errs.push(`${w}: 마디(bars)는 1~8개여야 해요`); return; }
     const bars = it.bars.map(b => String(b).trim().replace(/\s+/g, ' '));
-    bars.forEach((b, bi) => { const r = rParseBar(b, errs, `${w} ${bi+1}마디`); if(Math.abs(r.total - curT) > 0.5) errs.push(`${w} ${bi+1}마디: 길이가 ${(r.total/96).toFixed(2)}박이에요 (${curT/96}박이어야 해요)`); });
+    bars.forEach((b, bi) => { const r = rParseBar(b, errs, `${w} ${bi+1}마디`); if(r.sim){ if(bi === 0 && !items.some(x => x.bars)) errs.push(`${w} 1마디: 반복(%) 앞에 마디가 없어요`); return; } if(Math.abs(r.total - curT) > 0.5) errs.push(`${w} ${bi+1}마디: 길이가 ${(r.total/96).toFixed(2)}박이에요 (${curT/96}박이어야 해요)`); });
     const out = {bars}; if(it.n != null && it.n !== '') out.n = String(it.n).slice(0, 6);
     if(it.repeat === true) out.repeat = true;
     if(it.bass != null){
       if(!Array.isArray(it.bass) || it.bass.length !== bars.length) errs.push(`${w}: 베이스(bass) 마디 수가 다른 줄과 달라요`);
       else { out.bass = it.bass.map(b => String(b).trim().replace(/\s+/g, ' '));
-        out.bass.forEach((b, bi) => { const r = rParseBar(b, errs, `${w} 베이스 ${bi+1}마디`); if(Math.abs(r.total - curT) > 0.5) errs.push(`${w} 베이스 ${bi+1}마디: 길이가 맞지 않아요`); }); }
+        out.bass.forEach((b, bi) => { const r = rParseBar(b, errs, `${w} 베이스 ${bi+1}마디`); if(r.sim || bars[bi] === '%') return; if(Math.abs(r.total - curT) > 0.5) errs.push(`${w} 베이스 ${bi+1}마디: 길이가 맞지 않아요`); }); }
     }
     items.push(out);
   });
@@ -748,7 +806,7 @@ function validateScore(o, i){
   const label = title || id || at;
   if(o.kind === 'rhythm'){
     const r = validateRhythm(o, label); errs.push(...r.errs);
-    const clean = {id, title, book: String(o.book || '기타').trim(), eye: String(o.eye || '').trim(), chip: String(o.chip || '').trim(),
+    const clean = {id, title, book: String(o.book || '기타').trim(), eye: String(o.eye || '').trim(), chip: String(o.chip || '').trim(), part: String(o.part || '').trim().slice(0, 40),
                    src: String(o.src || '').trim(), order: Number(o.order) || 0, kind: 'rhythm', time: r.time || '4/4', bass: r.bass || 'none', cols: r.cols || 1, items: r.items || []};
     return {errs, clean};
   }
@@ -783,7 +841,7 @@ function validateScore(o, i){
     const total = steps.reduce((a, st) => a + stepGeom(st).H, 0);
     if(total > 900) errs.push(`${label}: 단계가 많아 한 페이지에 다 들어가지 않아요`);
   }
-  const clean = {id, title, book: String(o.book || '기타').trim(), eye: String(o.eye || '').trim(), chip: String(o.chip || '').trim(),
+  const clean = {id, title, book: String(o.book || '기타').trim(), eye: String(o.eye || '').trim(), chip: String(o.chip || '').trim(), part: String(o.part || '').trim().slice(0, 40),
                  src: String(o.src || '').trim(), order: Number(o.order) || 0, steps};
   return {errs, clean};
 }
@@ -808,7 +866,7 @@ let ME = null, ADMIN = false;
 let scores = [];          // 보이는 악보
 let myShares = new Map(); // 수강생: scoreId → 공유 문서
 let members = [];         // 관리자: 회원 명단
-const S = {view:'scores', cur:null, filter:'전체', mOpen:false,
+const S = {view:'scores', cur:null, book:lsGet('rh-book'), q:'', openParts:new Set(), mOpen:false,
            shareFor:null, shareMap:new Map(), shareSel:new Set(), shareQ:'', shareBusy:false, delAsk:false,
            memFor:null, memMap:new Map(), memSel:new Set(), memBusy:false, memDelAsk:false,
            addText:'', addResult:null, addFiles:[]};
@@ -947,24 +1005,45 @@ function render(){
   fitStage();
 }
 
-function chipsHTML(){
-  const kinds = [...new Set(scores.map(s => s.chip).filter(Boolean))];
-  if(kinds.length < 2) return '';
-  return `<div class="chips">${['전체', ...kinds].map(k => `<button class="chip" data-act="filter" data-f="${esc(k)}" aria-pressed="${S.filter===k}">${esc(k)}${k==='전체' ? ' ' + scores.length : ''}</button>`).join('')}</div>`;
+function lsGet(k){ try{ return localStorage.getItem(k) || ''; }catch(e){ return ''; } }
+function lsSet(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+// 책 → 파트 → 페이지 순으로 묶기
+function partOf(s){ return s.part || s.eye || s.chip || '기타'; }
+function bookTree(list){
+  const books = new Map();
+  list.forEach(s => { const b = s.book || '기타', p = partOf(s);
+    if(!books.has(b)) books.set(b, new Map());
+    const parts = books.get(b); if(!parts.has(p)) parts.set(p, []); parts.get(p).push(s); });
+  return books;   // 이미 책 · 순서대로 정렬된 목록이라 순서가 그대로 유지됨
+}
+function pageNo(s){ const m = /p\.?\s*(\d+)/.exec(s.src || ''); return m ? 'p.' + m[1] : ''; }
+const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+function curBook(tree){ const names = [...tree.keys()]; return names.includes(S.book) ? S.book : (names[0] || ''); }
+function booksHTML(tree){
+  if(tree.size < 2) return '';
+  const cb = curBook(tree);
+  return `<div class="books">${[...tree].map(([b, parts]) => { const n = [...parts.values()].reduce((a, x) => a + x.length, 0);
+    return `<button class="chip" data-act="book" data-f="${esc(b)}" aria-pressed="${b === cb}">${esc(b)}<b>${n}</b></button>`; }).join('')}</div>`;
 }
 function listHTML(){
-  const list = scores.filter(s => S.filter === '전체' || s.chip === S.filter);
   if(!scores.length) return `<div class="empty">${ADMIN ? '등록된 악보가 없어요.<br><a href="#" data-act="go" data-view="add">악보 등록</a>에서 추가해 주세요.' : '아직 공유받은 악보가 없어요.<br>선생님이 악보를 공유하면 여기에 나타나요.'}</div>`;
-  const books = [...new Set(list.map(s => s.book || '기타'))];
-  return books.map(b => `<div class="group">${books.length > 1 || ADMIN ? `<div class="gh">${esc(b)}</div>` : ''}${
-    list.filter(s => (s.book || '기타') === b).map(s => {
-      const sh = myShares.get(s.id);
-      const line = ADMIN ? esc(s.eye || s.chip) : esc([s.book, s.chip].filter(Boolean).join(' · '));
-      const date = !ADMIN && sh ? `<span class="d">${mdText(toD(sh.sharedAt))} 공유</span>` : (ADMIN && s.src ? `<span class="d">${esc(s.src)}</span>` : '');
-      const isNew = !ADMIN && sh && !sh.openedAt;
-      return `<button class="item" data-act="open" data-id="${esc(s.id)}" aria-current="${S.cur===s.id}">
-        <span class="tx"><span class="k">${line}</span><span class="n">${esc(s.title)}</span>${date}</span>${isNew ? '<span class="badge">NEW</span>' : ''}</button>`;
-    }).join('')}</div>`).join('');
+  const tree = bookTree(scores), q = S.q.trim().toLowerCase();
+  const search = scores.length > 12 ? `<label class="search">${ICON.find}<input id="listQ" data-act="listQ" placeholder="제목 · 파트 · 쪽으로 찾기" aria-label="악보 찾기" value="${esc(S.q)}"></label>` : '';
+  const row = s => { const sh = myShares.get(s.id), isNew = !ADMIN && sh && !sh.openedAt;
+    return `<button class="row" data-act="open" data-id="${esc(s.id)}" aria-current="${S.cur===s.id}"><span class="rt">${esc(s.title)}</span>${isNew ? '<span class="badge">NEW</span>' : ''}<span class="rp">${esc(pageNo(s))}</span></button>`; };
+  if(q){ // 찾기: 모든 책에서
+    const hit = scores.filter(s => [s.book, partOf(s), s.title, s.chip, s.eye, s.src].join(' ').toLowerCase().includes(q));
+    return search + (hit.length ? `<div class="pitems">${hit.map(s => `<div style="display:flex;flex-direction:column"><span class="sub" style="padding:6px 12px 0">${esc([s.book, partOf(s)].join(' · '))}</span>${row(s)}</div>`).join('')}</div>` : '<div class="empty">찾는 악보가 없어요</div>');
+  }
+  const cb = curBook(tree), parts = tree.get(cb) || new Map();
+  const cur = scores.find(s => s.id === S.cur);
+  const curKey = cur ? (cur.book || '기타') + '|' + partOf(cur) : '';
+  const keys = [...parts.keys()].map(p => cb + '|' + p);
+  const anyOpen = keys.some(k => S.openParts.has(k) || S.openParts.has('!' + k) || k === curKey);
+  return booksHTML(tree) + search + `<div>${[...parts].map(([p, items], i) => {
+    const key = cb + '|' + p, open = S.openParts.has(key) || (key === curKey && !S.openParts.has('!' + key)) || (!anyOpen && i === 0);
+    return `<div class="part"><button class="ph" data-act="part" data-f="${esc(key)}" aria-expanded="${open}">${CHEV}<span class="pn">${esc(p)}</span><span class="pc">${items.length}쪽</span></button>
+      ${open ? `<div class="pitems">${items.map(row).join('')}</div>` : ''}</div>`; }).join('')}</div>`;
 }
 function viewScores(){
   const cur = scores.find(s => s.id === S.cur);
@@ -972,7 +1051,6 @@ function viewScores(){
   return `<div class="vScores ${S.mOpen && cur ? 'm-open' : ''}">
     <aside class="list" aria-label="악보 목록">
       <div style="display:flex;flex-direction:column;gap:2px"><div class="eyebrow">DRUM SCORE</div><h1 class="t-title">${ADMIN ? '악보' : '내 악보'}</h1></div>
-      ${chipsHTML()}
       ${listHTML()}
     </aside>
     <div class="right">
@@ -1041,10 +1119,14 @@ function memberDetail(m){
     ${m.role !== 'admin' ? `
       <div style="display:flex;flex-direction:column;gap:6px"><h3 class="t-title" style="margin:0;font-size:20px">받은 악보</h3><span class="sub">체크한 페이지를 이 수강생이 봅니다</span></div>
       ${S.memBusy ? '<div class="sub">불러오는 중</div>' : scores.length ? `
-        <div class="checks">${scores.map(s => { const sh = S.memMap.get(s.id);
-          const st = sh ? (sh.openedAt ? '<span class="st on">열어봄</span>' : '<span class="st">안 열어봄</span>') : '';
-          return `<label class="check"><input type="checkbox" data-act="memChk" data-id="${esc(s.id)}" ${S.memSel.has(s.id)?'checked':''}>
-            <span class="nm">${esc(s.title)}<small>${esc([s.book, s.chip].filter(Boolean).join(' · '))}</small></span>${st}</label>`; }).join('')}</div>
+        <div class="checks">${[...bookTree(scores)].map(([b, parts]) => `<div class="mbook">${esc(b)}</div>${[...parts].map(([p, items]) => {
+          const on = items.filter(s => S.memSel.has(s.id)).length, key = b + '|' + p;
+          return `<details class="mpart" ${S.openParts.has('m:' + key) ? 'open' : ''} data-key="${esc(key)}"><summary><span class="pn">${esc(p)}</span><span class="pc">${on ? `<b style="color:var(--g)">${on}</b> / ` : ''}${items.length}쪽</span>
+            <button class="btn sm" data-act="memPartAll" data-f="${esc(key)}">${on === items.length ? '모두 빼기' : '모두 주기'}</button></summary>
+            ${items.map(s => { const sh = S.memMap.get(s.id);
+            const st = sh ? (sh.openedAt ? '<span class="st on">열어봄</span>' : '<span class="st">안 열어봄</span>') : '';
+            return `<label class="check"><input type="checkbox" data-act="memChk" data-id="${esc(s.id)}" ${S.memSel.has(s.id)?'checked':''}>
+              <span class="nm">${esc(s.title)}<small>${esc([pageNo(s), s.chip].filter(Boolean).join(' · '))}</small></span>${st}</label>`; }).join('')}</details>`; }).join('')}`).join('')}</div>
         <div class="sharefoot"><span class="sub">${S.memSel.size}장${dirty ? ' · 저장 안 됨' : ''}</span><button class="btn primary" data-act="memSave" ${dirty?'':'disabled'}>저장</button></div>`
       : '<div class="sub">등록된 악보가 없어요</div>'}` : ''}
     ${self ? '' : `<div class="danger-zone"><div class="rowbtns">
@@ -1213,7 +1295,9 @@ const ACT = {
   login, logout: () => { signOut(auth).catch(() => {}); },
   retry: () => location.reload(),
   go: t => { S.view = t.dataset.view; S.mOpen = false; render(); },
-  filter: t => { S.filter = t.dataset.f; render(); },
+  book: t => { S.book = t.dataset.f; lsSet('rh-book', S.book); render(); const l = document.querySelector('.list'); if(l) l.scrollTop = 0; },
+  part: t => { const k = t.dataset.f, open = t.getAttribute('aria-expanded') === 'true';
+    if(open){ S.openParts.delete(k); S.openParts.add('!' + k); } else { S.openParts.add(k); S.openParts.delete('!' + k); } render(); },
   open: t => { S.cur = t.dataset.id; S.mOpen = true; S.delAsk = false; render(); markOpened(S.cur); const v = document.querySelector('.viewer'); if(v) v.scrollTop = 0; },
   back: () => { S.mOpen = false; render(); },
   print: doPrint,
@@ -1224,6 +1308,8 @@ const ACT = {
   scoreDel: () => { S.delAsk = true; render(); },
   scoreDelNo: () => { S.delAsk = false; render(); },
   scoreDelYes: deleteScore,
+  memPartAll: (t, e) => { e.preventDefault(); const k = t.dataset.f, items = scores.filter(s => (s.book || '기타') + '|' + partOf(s) === k);
+    const all = items.every(s => S.memSel.has(s.id)); items.forEach(s => all ? S.memSel.delete(s.id) : S.memSel.add(s.id)); render(); },
   memOpen: t => { S.mOpen = true; loadSharesOf(t.dataset.email); },
   memBack: () => { S.mOpen = false; render(); },
   memSave: saveMemberShares,
@@ -1247,6 +1333,10 @@ document.addEventListener('click', e => {
   if(t.tagName === 'A') e.preventDefault();
   f(t, e);
 });
+document.addEventListener('toggle', e => {
+  const d = e.target; if(!d.matches || !d.matches('details.mpart')) return;
+  const k = 'm:' + d.dataset.key; d.open ? S.openParts.add(k) : S.openParts.delete(k);
+}, true);
 document.addEventListener('change', e => {
   const t = e.target;
   if(t.dataset.act === 'addFile' && t.files && t.files.length){ readFiles(t.files); t.value = ''; return; }
@@ -1256,6 +1346,7 @@ document.addEventListener('change', e => {
 document.addEventListener('input', e => {
   const t = e.target;
   if(t.dataset.act === 'addText'){ S.addText = t.value; S.addFiles = []; }
+  if(t.dataset.act === 'listQ'){ S.q = t.value; const pos = t.selectionStart; render(); const n = $('listQ'); if(n){ n.focus(); n.setSelectionRange(pos, pos); } }
   if(t.dataset.act === 'shareQ'){ S.shareQ = t.value; const pos = t.selectionStart; render(); const n = $('shareQ'); if(n){ n.focus(); n.setSelectionRange(pos, pos); } }
 });
 ['dragover','dragenter'].forEach(ev => document.addEventListener(ev, e => { const z = e.target.closest && e.target.closest('#dropZone'); if(!z) return; e.preventDefault(); z.classList.add('on'); }));
