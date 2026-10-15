@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#123B2A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RH 악보">
+<title>리듬 하우스 · 악보</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* ──────────────────────────────────────────────────────────────
+   리듬 하우스 악보 앱 (Rhythm House Score)
+   디자인: 좌측 짙은 녹색 레일 · 제목 Cafe24 단정해 · 본문 Cafe24 심플해
+   로고 글씨 Cafe24 러빙유 ("Rhythm House"만)
+   ────────────────────────────────────────────────────────────── */
+@font-face{font-family:'RH Title';src:url('fonts/Cafe24Danjunghae-v2.0.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'RH Body';src:url('fonts/Cafe24Simplehae-v2.0.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'RH Logo';src:url('fonts/Cafe24Lovingu.ttf') format('truetype');font-display:swap}
+
+:root{
+  --g:#123B2A; --g-dark:#0B2619; --g-soft:#E6EFEA; --g-line:#B9CDC2;
+  --ink:#15201A; --muted:#5E6A63; --line:#DCE2DE; --line-2:#C9D3CD;
+  --bg:#F3F5F3; --paper:#FFFFFF; --danger:#A23B2C;
+  --f-title:'RH Title','Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+  --f-body:'RH Body','Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+  --f-logo:'RH Logo',cursive;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px); --sar:env(safe-area-inset-right,0px);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  -webkit-text-size-adjust:100%;font-synthesis:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--g)}
+.hide{display:none!important}
+:focus-visible{outline:2px solid var(--g);outline-offset:2px}
+.t-title{font-family:var(--f-title);font-weight:400;letter-spacing:-.01em}
+.wm{font-family:var(--f-logo);line-height:1;white-space:nowrap}
+.eyebrow{font-size:12px;letter-spacing:.14em;color:var(--g)}
+.sub{font-size:12.5px;color:var(--muted)}
+
+/* 버튼 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:10px;
+  border:1px solid var(--line-2);background:var(--paper);font-size:14.5px;white-space:nowrap}
+.btn:hover{background:#F7F9F8}
+.btn.primary{background:var(--g);border-color:var(--g);color:#fff}
+.btn.primary:hover{background:var(--g-dark)}
+.btn.danger{border-color:var(--danger);color:var(--danger)}
+.btn.danger.solid{background:var(--danger);color:#fff}
+.btn.sm{height:36px;padding:0 12px;font-size:13px;border-radius:9px}
+.btn:disabled{opacity:.5;cursor:default}
+.iconbtn{width:44px;height:44px;padding:0}
+.chip{border:1px solid var(--line-2);background:var(--paper);border-radius:999px;padding:7px 14px;font-size:13px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--g);border-color:var(--g);color:#fff}
+.badge{font-size:11px;line-height:1;color:#fff;background:var(--g);border-radius:6px;padding:4px 7px;white-space:nowrap}
+.badge.quiet{background:transparent;color:var(--muted);border:1px solid var(--line-2)}
+.badge.warn{background:transparent;color:var(--danger);border:1px solid var(--danger)}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.input{height:44px;border:1px solid var(--line-2);border-radius:10px;padding:0 12px;background:var(--paper);font-size:15px;color:var(--ink);min-width:0}
+.input:focus{outline:2px solid var(--g);outline-offset:0;border-color:var(--g)}
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line-2);border-radius:10px;padding:0 12px;height:44px;background:var(--paper)}
+.search input{border:0;outline:0;flex:1;min-width:0;background:transparent;font-size:14px}
+
+/* ── 전체 화면 (로그인 · 안내) ─────────────────────── */
+.full{min-height:100%;display:flex}
+.full .stripe{flex:0 0 14px;background:var(--g)}
+.full .center{flex:1;display:flex;align-items:center;justify-content:center;padding:32px max(20px,var(--sar)) calc(32px + var(--sab)) 20px}
+.card{width:100%;max-width:400px;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:36px 28px;
+  display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
+.card img.emblem{width:120px;height:126px;object-fit:contain}
+.card .wm{font-size:40px;color:var(--g)}
+.card .note{font-size:13px;color:var(--muted)}
+.card .box{width:100%;text-align:left;background:var(--g-soft);border-radius:10px;padding:12px 14px;font-size:13.5px;color:var(--ink)}
+.card .mail{font-size:15px;word-break:break-all;background:var(--bg);border-radius:8px;padding:8px 12px;width:100%}
+.gbtn{width:100%;height:50px;font-size:16px}
+.gbtn svg{flex:none}
+
+/* ── 앱 틀 ─────────────────────────────────────── */
+#scApp{height:100%;display:flex}
+.rail{flex:0 0 76px;background:var(--g);display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:calc(20px + var(--sat)) 0 calc(24px + var(--sab));padding-left:var(--sal)}
+.rail img{width:44px;height:46px;object-fit:contain;margin-bottom:16px}
+.rail .rb{width:52px;height:52px;border-radius:12px;border:0;background:transparent;display:flex;align-items:center;justify-content:center;color:var(--g-line)}
+.rail .rb:hover{background:rgba(255,255,255,.08)}
+.rail .rb[aria-current="page"]{background:rgba(255,255,255,.16);color:#fff}
+.rail .grow{flex:1}
+.rail .vwm{writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--f-logo);font-size:24px;color:#fff;white-space:nowrap}
+.body{flex:1;min-width:0;display:flex;flex-direction:column}
+.mtop{display:none}
+.tabs{display:none}
+#main{flex:1;min-height:0;position:relative}
+
+/* ── 악보 화면 (목록 | 보기 | 공유) ───────────────── */
+.vScores,.vMembers{height:100%;display:flex}
+.list{flex:0 0 360px;background:var(--paper);border-right:1px solid var(--line);overflow:auto;
+  padding:calc(28px + var(--sat)) 20px 28px;display:flex;flex-direction:column;gap:16px}
+.list h1{margin:0;font-size:30px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.group{display:flex;flex-direction:column;gap:4px}
+.group .gh{font-size:12px;letter-spacing:.12em;color:var(--muted);padding:6px 4px 2px}
+.item{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:12px;border:1.5px solid transparent;
+  background:transparent;text-align:left;width:100%}
+.item:hover{background:#F6F8F7}
+.item[aria-current="true"]{background:var(--g-soft);border-color:var(--g)}
+.item .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.item .k{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .n{font-family:var(--f-title);font-size:18px;line-height:1.3}
+.item .d{font-size:12px;color:var(--muted)}
+.empty{padding:28px 8px;text-align:center;color:var(--muted);font-size:14px;line-height:1.7}
+
+.right{flex:1;min-width:0;display:flex;overflow:hidden}
+.viewer{flex:1;min-width:0;display:flex;flex-direction:column;overflow:auto}
+.vbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:calc(16px + var(--sat)) 28px 16px;background:var(--paper);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+.vbar .tt{flex:1;min-width:160px;display:flex;flex-direction:column;gap:1px}
+.vbar .tt .t-title{font-size:22px;line-height:1.25}
+.vbar .back{display:none}
+.stage{flex:1;padding:28px;display:flex;justify-content:center;align-items:flex-start}
+.paper{box-shadow:0 1px 3px rgba(0,0,0,.12),0 10px 30px rgba(18,59,42,.12);background:#fff;overflow:hidden;flex:none}
+.scaler{transform-origin:0 0;width:794px}
+
+.share{flex:0 0 340px;background:var(--paper);border-left:1px solid var(--line);overflow:auto;padding:calc(24px + var(--sat)) 22px 24px;display:flex;flex-direction:column;gap:14px}
+.share h2{margin:0;font-size:24px}
+.checks{display:flex;flex-direction:column}
+.check{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid #EEF1EF;font-size:15px}
+.check input{width:20px;height:20px;accent-color:var(--g);flex:none}
+.check .nm{flex:1;min-width:0}
+.check .nm small{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.check .st{font-size:12px;color:var(--muted);white-space:nowrap}
+.check .st.on{color:var(--g)}
+.sharefoot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:4px}
+.rowbtns{display:flex;gap:6px;flex-wrap:wrap}
+.danger-zone{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:8px}
+
+/* ── 회원 관리 ─────────────────────────────────── */
+.mdetail{flex:1;min-width:0;overflow:auto;padding:calc(28px + var(--sat)) 32px 32px;display:flex;flex-direction:column;gap:18px;max-width:760px}
+.mdetail h2{margin:0;font-size:26px}
+.addform{display:grid;grid-template-columns:1fr;gap:10px;background:var(--bg);border-radius:12px;padding:14px}
+.addform .row{display:flex;gap:8px;flex-wrap:wrap}
+.addform .row > *{flex:1 1 140px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;word-break:break-all}
+
+/* ── 악보 등록 ─────────────────────────────────── */
+.vAdd,.vMe{height:100%;overflow:auto}
+.addwrap{max-width:980px;padding:calc(32px + var(--sat)) 36px 48px;display:flex;flex-direction:column;gap:18px}
+.addwrap h1{margin:0;font-size:30px}
+textarea.code{width:100%;min-height:220px;border:1px solid var(--line-2);border-radius:12px;padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;background:var(--paper);resize:vertical}
+.errs{background:#FBEFEC;border:1px solid #E7C3BB;color:#6E261B;border-radius:12px;padding:12px 16px;font-size:13.5px}
+.errs ul{margin:6px 0 0;padding-left:18px}
+.okline{background:var(--g-soft);border-radius:12px;padding:12px 16px;font-size:14px}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:22px}
+.thumb{display:flex;flex-direction:column;gap:8px}
+.thumb .cap{display:flex;flex-direction:column;gap:2px}
+.thumb .cap b{font-family:var(--f-title);font-weight:400;font-size:16px}
+.thumb .cap span{font-size:12px;color:var(--muted)}
+.mewrap{max-width:560px;padding:calc(32px + var(--sat)) 36px 48px;display:flex;flex-direction:column;gap:18px}
+.mewrap h1{margin:0;font-size:30px}
+
+/* ── 알림 ─────────────────────────────────────── */
+#toast{position:fixed;left:50%;bottom:calc(28px + var(--sab));transform:translateX(-50%);background:#15201A;color:#fff;
+  padding:12px 18px;border-radius:12px;font-size:14px;max-width:calc(100% - 32px);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+
+/* ── 넓이별 배치 ───────────────────────────────── */
+@media (max-width:1179px){
+  .right{flex-direction:column;overflow:auto}
+  .viewer{overflow:visible;flex:none}
+  .share{flex:none;border-left:0;border-top:1px solid var(--line);padding-top:24px}
+}
+@media (max-width:759px){
+  .rail{flex:0 0 10px;padding:0}
+  .rail > *{display:none!important}
+  .mtop{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + var(--sat)) max(16px,var(--sar)) 8px 16px;background:var(--paper)}
+  .mtop .wm{font-size:24px;color:var(--g)}
+  .mtop img{width:34px;height:36px;object-fit:contain}
+  .tabs{display:flex;background:var(--paper);border-top:1px solid var(--line);padding:6px 0 calc(6px + var(--sab))}
+  .tabs button{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;color:var(--muted);padding:6px 0;min-height:52px}
+  .tabs button[aria-current="page"]{color:var(--g)}
+  .list{flex:1;border-right:0;padding:8px 16px 24px}
+  .list h1{font-size:26px}
+  .chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
+  .vScores .right,.vMembers .mdetail{display:none}
+  .vScores.m-open .list,.vMembers.m-open .list{display:none}
+  .vScores.m-open .right{display:flex}
+  .vMembers.m-open .mdetail{display:flex}
+  .vbar{padding:10px 12px;top:0}
+  .vbar .back{display:inline-flex}
+  .vbar .tt .t-title{font-size:18px}
+  .stage{padding:12px}
+  .share{padding:20px 16px}
+  .mdetail{padding:12px 16px 24px}
+  .addwrap,.mewrap{padding:8px 16px 32px}
+  .addwrap h1,.mewrap h1{font-size:26px}
+}
+
+/* ── 악보 페이지 (A4, 인쇄물과 같은 모양) ──────────── */
+.page{--pg:#123b2a;width:794px;height:1123px;background:#fff;color:#111;position:relative;overflow:hidden;
+  font-family:var(--f-body);padding:56px 60px 0 88px;line-height:1.2}
+.page::before{content:"";position:absolute;left:0;top:0;bottom:0;width:30px;background:var(--pg)}
+.page svg{display:block;overflow:visible}
+.page .hd{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding-bottom:12px}
+.page .eye{font-size:10.5px;letter-spacing:.16em;color:var(--pg);min-height:13px}
+.page .ttl{font-family:var(--f-title);font-size:30px;font-weight:400;letter-spacing:-.01em;margin-top:6px;line-height:1.1}
+.page .pchip{font-size:11.5px;color:var(--pg);border:1.4px solid var(--pg);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.page .steps{display:grid;height:900px;align-content:space-evenly}
+.page .step{display:grid;grid-template-columns:46px 1fr;align-items:end}
+.page .sn{display:grid;justify-items:center;gap:3px;padding-bottom:22px}
+.page .sn b{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:400;
+  font-family:var(--f-title);background:var(--pg);color:#fff}
+.page .sn span{font-size:10px;color:#666;letter-spacing:.02em;white-space:nowrap}
+.page .ft{position:absolute;left:88px;right:60px;bottom:30px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#777}
+.page .ft .wm{font-size:15px;color:var(--pg)}
+.page .rail-wm{position:absolute;left:0;width:30px;bottom:56px;display:flex;justify-content:center}
+.page .rail-wm span{writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--f-logo);color:#fff;font-size:21px;letter-spacing:.02em}
+
+/* ── 인쇄: 악보 한 장만 A4로 ───────────────────── */
+#printArea{display:none}
+@page{size:A4;margin:0}
+@media print{
+  html,body{height:auto;background:#fff}
+  body > *:not(#printArea){display:none!important}
+  #printArea{display:block}
+  #printArea .page{width:210mm;height:297mm;break-after:page;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<!-- 불러오는 중 -->
+<div class="full" id="scLoading">
+  <div class="stripe"></div>
+  <div class="center"><div class="card" style="border:0;background:transparent">
+    <img class="emblem" src="logo.png" alt="리듬 하우스">
+    <div class="note">불러오는 중</div>
+  </div></div>
+</div>
+
+<!-- 설정 안 됨 -->
+<div class="full hide" id="scSetup">
+  <div class="stripe"></div>
+  <div class="center"><div class="card">
+    <div class="wm">Rhythm House</div>
+    <h1 class="t-title" style="margin:0;font-size:22px">Firebase 설정값이 아직 없어요</h1>
+    <div class="box">index.html 위쪽의 <b>firebaseConfig</b> 칸에 Firebase 콘솔에서 복사한 설정값을 붙여넣고 다시 올려 주세요.</div>
+  </div></div>
+</div>
+
+<!-- 로그인 -->
+<div class="full hide" id="scLogin">
+  <div class="stripe"></div>
+  <div class="center"><div class="card">
+    <img class="emblem" src="logo.png" alt="">
+    <div class="wm">Rhythm House</div>
+    <div class="eyebrow">DRUM SCORE</div>
+    <div class="box hide" id="inAppBox"></div>
+    <button class="btn primary gbtn" id="btnGoogle" data-act="login">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path fill="#fff" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#fff" opacity=".85" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#fff" opacity=".7" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2L6.4 14z"/><path fill="#fff" opacity=".55" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10c.8-2.3 3-4.1 5.6-4.1z"/></svg>
+      구글 계정으로 로그인
+    </button>
+    <div class="note">레슨 수강생 전용입니다.<br>선생님이 등록한 구글 계정만 들어올 수 있어요.</div>
+  </div></div>
+</div>
+
+<!-- 등록 안 된 계정 / 정지된 계정 -->
+<div class="full hide" id="scNoAccess">
+  <div class="stripe"></div>
+  <div class="center"><div class="card">
+    <div class="wm">Rhythm House</div>
+    <h1 class="t-title" style="margin:0;font-size:22px" id="naTitle">등록되지 않은 계정이에요</h1>
+    <div class="note" id="naNote">아래 주소를 선생님께 알려 주시면 등록해 드려요.</div>
+    <div class="mail" id="naMail"></div>
+    <div class="rowbtns" style="justify-content:center">
+      <button class="btn" data-act="copyMail">주소 복사</button>
+      <button class="btn" data-act="logout">다른 계정으로 로그인</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- 앱 -->
+<div class="hide" id="scApp">
+  <nav class="rail" aria-label="주 메뉴">
+    <img src="logo.png" alt="리듬 하우스">
+    <div id="railBtns" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="grow"></div>
+    <div class="vwm">Rhythm House</div>
+  </nav>
+  <div class="body">
+    <header class="mtop"><span class="wm">Rhythm House</span><img src="logo.png" alt=""></header>
+    <div id="main"></div>
+    <nav class="tabs" id="tabs" aria-label="하단 메뉴"></nav>
+  </div>
+</div>
+
+<div id="printArea"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
+         getRedirectResult, signOut, onAuthStateChanged,
+         setPersistence, browserLocalPersistence }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc,
+         query, where, writeBatch, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ══════════════════════════════════════════════════════════════
+//  ① Firebase 설정값 — 콘솔(프로젝트 설정 › 내 앱)에서 복사해 붙여넣기
+// ══════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyA5dz57Ufi8mP1QMf1nAfAR3UWOJOeqsfg",
+  authDomain: "rhythm-house-score.firebaseapp.com",
+  projectId: "rhythm-house-score",
+  storageBucket: "rhythm-house-score.firebasestorage.app",
+  messagingSenderId: "675811499612",
+  appId: "1:675811499612:web:04f5ef8344f556e69f9099"
+};
+
+// ② 이 주소로 처음 로그인하면 관리자로 자동 등록됩니다 (보안 규칙의 주소와 같아야 함)
+const OWNER_EMAIL = "artist4rhythm@gmail.com";
+
+// ══════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const SCREENS = ['scLoading','scSetup','scLogin','scNoAccess','scApp'];
+function show(id){ SCREENS.forEach(s => $(s).classList.toggle('hide', s !== id)); }
+
+function esc(v){ return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+let toastTimer = 0;
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2600); }
+const toD = v => v ? (typeof v.toDate === 'function' ? v.toDate() : new Date(v)) : null;
+const mdText = d => d ? `${d.getMonth()+1}월 ${d.getDate()}일` : '';
+const ymd = d => `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+function errText(e){ const c = (e && e.code) || ''; if(c.includes('permission')) return '권한이 없어요'; if(c.includes('unavailable') || c.includes('network')) return '인터넷 연결을 확인해 주세요'; return '문제가 생겼어요' + (c ? ' · ' + c : ''); }
+
+const ICON = {
+  score:'<svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
+  people:'<svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2 .7 3.2 2.6 3.7 5.5"/></svg>',
+  add:'<svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  me:'<svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+  print:'<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg>',
+  back:'<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  find:'<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5E6A63" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>'
+};
+
+// ══════════════════════════════════════════════════════════════
+//  악보 그리기 (5선 드럼 악보)
+//  한 박 = 칸을 공백으로 구분한 문자열. 칸 안의 글자:
+//  x 하이햇  s 스네어  t 하이탐  f 플로어탐  k 킥  p 하이햇 페달  > 악센트  - 쉼
+//  칸 수: 1·2·3·4 = 일반, 6 = 16분 셋잇단(6), 8 = 32분
+// ══════════════════════════════════════════════════════════════
+const POS = {p:-1, k:1, f:3, s:5, t:7, x:9};
+const XHEAD = {x:1, p:1};
+const SP = 8.4, INK = '#111';
+const STEP_W = 794 - 148 - 46;
+function ell(cx,cy,rx,ry,deg){const r=deg*Math.PI/180,c=Math.cos(r)*rx,s=Math.sin(r)*rx;
+  return `M${cx-c},${cy-s}A${rx},${ry} ${deg} 1 0 ${cx+c},${cy+s}A${rx},${ry} ${deg} 1 0 ${cx-c},${cy-s}Z`;}
+function parseBeat(str){ return String(str).trim().split(/\s+/).map(tok => ({acc:tok.includes('>'), inst:[...tok.replace(/>/g,'')].filter(c => c in POS)})); }
+function stepGeom(step){
+  const n0 = parseBeat(step.beats[0]).length, hasStick = !!step.stick, tup = n0===6 || n0===3;
+  const top = (hasStick?2.6*SP:0) + (tup?2.0*SP:0) + 3.2*SP + 4.2*SP, bot = top + 4*SP;
+  return {hasStick, tup, top, bot, H: bot + 2.2*SP};
+}
+function drawStep(step, W, opt){
+  const sp=SP, k=INK, g=stepGeom(step), {hasStick, tup, bot, H} = g;
+  const yOf = p => bot - p*sp/2;
+  const beamY = yOf(9) - 3.4*sp, accY = beamY - 1.25*sp, tupY = accY - 1.15*sp, stickY = (tup?tupY:accY) - 1.5*sp;
+  const pre = 6.6*sp, post = 1.6*sp, bw = (W-pre-post)/step.beats.length;
+  const tsFont = `'Noto Serif KR','Noto Serif CJK KR',Georgia,'Times New Roman',serif`;
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">`;
+  for(let i=0;i<5;i++) s += `<line x1="0" x2="${W}" y1="${yOf(i*2)}" y2="${yOf(i*2)}" stroke="${k}" stroke-width=".8"/>`;
+  s += `<rect x="${.2*sp}" y="${yOf(6)}" width="${.42*sp}" height="${2*sp}" fill="${k}"/><rect x="${.95*sp}" y="${yOf(6)}" width="${.42*sp}" height="${2*sp}" fill="${k}"/>`;
+  if(opt.time){ const fz=2.75*sp, tx=2.85*sp;
+    s += `<text x="${tx}" y="${yOf(4)-.05*sp}" text-anchor="middle" style="font:900 ${fz}px ${tsFont}" fill="${k}">4</text><text x="${tx}" y="${yOf(0)-.05*sp}" text-anchor="middle" style="font:900 ${fz}px ${tsFont}" fill="${k}">4</text>`; }
+  const rx = pre-1.9*sp;
+  s += `<rect x="${rx}" y="${yOf(8)}" width="${.5*sp}" height="${4*sp}" fill="${k}"/><line x1="${rx+.95*sp}" x2="${rx+.95*sp}" y1="${yOf(8)}" y2="${yOf(0)}" stroke="${k}" stroke-width=".9"/>`;
+  s += `<circle cx="${rx+1.5*sp}" cy="${yOf(5)}" r="${.22*sp}" fill="${k}"/><circle cx="${rx+1.5*sp}" cy="${yOf(3)}" r="${.22*sp}" fill="${k}"/>`;
+  const ex = W-.5*sp;
+  s += `<rect x="${ex}" y="${yOf(8)}" width="${.5*sp}" height="${4*sp}" fill="${k}"/><line x1="${ex-.45*sp}" x2="${ex-.45*sp}" y1="${yOf(8)}" y2="${yOf(0)}" stroke="${k}" stroke-width=".9"/>`;
+  s += `<circle cx="${ex-1.0*sp}" cy="${yOf(5)}" r="${.22*sp}" fill="${k}"/><circle cx="${ex-1.0*sp}" cy="${yOf(3)}" r="${.22*sp}" fill="${k}"/>`;
+  step.beats.forEach((b, bi) => {
+    const ev = parseBeat(b), n = ev.length, x0 = pre+bi*bw+bw*.07, span = bw*.74;
+    const xs = ev.map((_, i) => x0 + (n===1 ? 0 : i*span/(n-1)));
+    const hx = .6*sp, stemX = x => x + hx*.92;
+    const played = [];
+    ev.forEach((e, i) => {
+      const x = xs[i]; if(!e.inst.length) return;
+      played.push(i);
+      const ps = e.inst.map(c => POS[c]);
+      e.inst.forEach(c => { const y = yOf(POS[c]);
+        if(XHEAD[c]) s += `<path d="M${x-.5*sp},${y-.5*sp}L${x+.5*sp},${y+.5*sp}M${x-.5*sp},${y+.5*sp}L${x+.5*sp},${y-.5*sp}" stroke="${k}" stroke-width="${.15*sp}" stroke-linecap="round"/>`;
+        else s += `<path fill="${k}" d="${ell(x,y,hx,.44*sp,-20)}"/>`; });
+      const low = Math.min(...ps), xHeadLow = XHEAD[e.inst.find(c => POS[c]===low)];
+      s += `<line x1="${stemX(x)}" x2="${stemX(x)}" y1="${yOf(low)-(xHeadLow?.5*sp:.15*sp)}" y2="${beamY}" stroke="${k}" stroke-width="${.12*sp}"/>`;
+      if(e.acc) s += `<path d="M${x-.4*sp},${accY-.42*sp}L${x+.55*sp},${accY}L${x-.4*sp},${accY+.42*sp}" fill="none" stroke="${k}" stroke-width="${.13*sp}" stroke-linejoin="miter"/>`;
+    });
+    if(played.length){
+      const beams = n===8 ? 3 : (n===2||n===3) ? 1 : n===1 ? 0 : 2;
+      const bx1 = stemX(xs[played[0]]) - .06*sp, bx2 = stemX(xs[played[played.length-1]]) + .06*sp;
+      if(played.length > 1) for(let j=0;j<beams;j++) s += `<rect x="${bx1}" y="${beamY+j*.75*sp}" width="${bx2-bx1}" height="${.5*sp}" fill="${k}"/>`;
+    }
+    if(tup){ const a = xs[0]-.3*sp, c = stemX(xs[n-1])+.2*sp, m = (a+c)/2, y = tupY;
+      s += `<path d="M${a},${y+.55*sp}V${y}H${m-.9*sp}M${m+.9*sp},${y}H${c}V${y+.55*sp}" fill="none" stroke="#333" stroke-width=".8"/>`;
+      s += `<text x="${m}" y="${y+.42*sp}" text-anchor="middle" style="font:400 ${1.45*sp}px var(--f-body)" fill="#333">${n}</text>`; }
+    if(hasStick && step.stick[bi]) String(step.stick[bi]).trim().split(/\s+/).forEach((c, i) => {
+      if(c !== '.' && xs[i] !== undefined) s += `<text x="${xs[i]}" y="${stickY}" text-anchor="middle" style="font:400 ${1.5*sp}px var(--f-body)" fill="#123b2a">${esc(c)}</text>`; });
+  });
+  return s + '</svg>';
+}
+function pageHTML(pg, footer){
+  const steps = pg.steps.map((st, i) => `<div class="step"><div class="sn"><b>${i+1}</b><span>${esc(st.tag)}</span></div>${drawStep(st, STEP_W, {time: i===0})}</div>`).join('');
+  return `<div class="page"><div class="rail-wm"><span>Rhythm House</span></div>
+    <div class="hd"><div><div class="eye">${esc(pg.eye)}</div><div class="ttl">${esc(pg.title)}</div></div>${pg.chip ? `<div class="pchip">${esc(pg.chip)}</div>` : ''}</div>
+    <div class="steps">${steps}</div>
+    <div class="ft"><span><span class="wm">Rhythm House</span>${pg.src ? ' · ' + esc(pg.src) : ''}</span><span>${esc(footer || '')}</span></div></div>`;
+}
+function paperHTML(pg, width){
+  const sc = width / 794;
+  return `<div class="paper" style="width:${794*sc}px;height:${1123*sc}px"><div class="scaler" style="transform:scale(${sc})">${pageHTML(pg)}</div></div>`;
+}
+
+// ── 악보 등록 코드 검사 ─────────────────────────────
+const ID_RE = /^[a-z0-9][a-z0-9-]{0,59}$/;
+function validateScore(o, i){
+  const at = `${i+1}번째 악보`, errs = [];
+  if(!o || typeof o !== 'object' || Array.isArray(o)) return {errs:[`${at}: 형식이 올바르지 않아요`]};
+  const id = String(o.id || '').trim();
+  if(!ID_RE.test(id)) errs.push(`${at}: id는 영문 소문자·숫자·- 로 써 주세요 (예: ld-c1-01)`);
+  const title = String(o.title || '').trim();
+  if(!title) errs.push(`${at}: 제목(title)이 없어요`);
+  const label = title || id || at;
+  if(!Array.isArray(o.steps) || !o.steps.length){ errs.push(`${label}: 단계(steps)가 없어요`); return {errs}; }
+  if(o.steps.length > 6) errs.push(`${label}: 단계는 한 페이지에 6개까지예요`);
+  const steps = [];
+  o.steps.forEach((st, si) => {
+    const w = `${label} ${si+1}단계`;
+    if(!st || !Array.isArray(st.beats) || !st.beats.length || st.beats.length > 8){ errs.push(`${w}: 박(beats)은 1~8개여야 해요`); return; }
+    const beats = st.beats.map(b => String(b).trim().replace(/\s+/g,' '));
+    beats.forEach((b, bi) => {
+      const toks = b.split(' ');
+      if(![1,2,3,4,6,8].includes(toks.length)) errs.push(`${w} ${bi+1}박: 칸이 ${toks.length}개예요 (1·2·3·4·6·8개만 돼요)`);
+      toks.forEach(t => { if(!/^[xstfkp>-]+$/.test(t) || (t !== '-' && !/[xstfkp]/.test(t))) errs.push(`${w} ${bi+1}박: "${t}"는 읽을 수 없는 칸이에요`); });
+    });
+    const out = {tag: String(st.tag || '').slice(0, 12), beats};
+    if(st.stick != null){
+      if(!Array.isArray(st.stick) || st.stick.length !== beats.length) errs.push(`${w}: 스티킹(stick) 수가 박 수와 달라요`);
+      else {
+        const stick = st.stick.map(x => String(x).trim().replace(/\s+/g,' '));
+        stick.forEach((x, bi) => {
+          const toks = x.split(' ');
+          if(toks.length !== beats[bi].split(' ').length) errs.push(`${w} ${bi+1}박: 스티킹 칸 수가 음표 칸 수와 달라요`);
+          toks.forEach(t => { if(!/^[RLrl.]$/.test(t)) errs.push(`${w} ${bi+1}박: 스티킹 "${t}"는 R·L·. 만 써요`); });
+        });
+        out.stick = stick;
+      }
+    }
+    steps.push(out);
+  });
+  if(!errs.length){
+    const total = steps.reduce((a, st) => a + stepGeom(st).H, 0);
+    if(total > 900) errs.push(`${label}: 단계가 많아 한 페이지에 다 들어가지 않아요`);
+  }
+  const clean = {id, title, book: String(o.book || '기타').trim(), eye: String(o.eye || '').trim(), chip: String(o.chip || '').trim(),
+                 src: String(o.src || '').trim(), order: Number(o.order) || 0, steps};
+  return {errs, clean};
+}
+function sortScores(list){
+  return list.sort((a, b) => (a.book||'').localeCompare(b.book||'', 'ko') || (a.order||0) - (b.order||0) || (a.title||'').localeCompare(b.title||'', 'ko'));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  Firebase
+// ══════════════════════════════════════════════════════════════
+if(!firebaseConfig.apiKey || firebaseConfig.apiKey.includes('붙여넣기')){ show('scSetup'); throw new Error('firebaseConfig 없음'); }
+const fb = initializeApp(firebaseConfig);
+const auth = getAuth(fb);
+const db = getFirestore(fb);
+const provider = new GoogleAuthProvider();
+provider.setCustomParameters({prompt:'select_account'});
+setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+// ── 상태 ────────────────────────────────────────
+let ME = null, ADMIN = false;
+let scores = [];          // 보이는 악보
+let myShares = new Map(); // 수강생: scoreId → 공유 문서
+let members = [];         // 관리자: 회원 명단
+const S = {view:'scores', cur:null, filter:'전체', mOpen:false,
+           shareFor:null, shareMap:new Map(), shareSel:new Set(), shareQ:'', shareBusy:false, delAsk:false,
+           memFor:null, memMap:new Map(), memSel:new Set(), memBusy:false, memDelAsk:false,
+           addText:'', addResult:null};
+
+// ── 로그인 ──────────────────────────────────────
+function inAppName(){
+  const u = navigator.userAgent || '';
+  if(/KAKAOTALK/i.test(u)) return '카카오톡';
+  if(/NAVER\(inapp|NAVER\//i.test(u)) return '네이버 앱';
+  if(/DaumApps|DaumDevice/i.test(u)) return '다음 앱';
+  if(/Instagram/i.test(u)) return '인스타그램';
+  if(/FBAN|FBAV|FB_IAB/i.test(u)) return '페이스북';
+  if(/\bLine\//i.test(u)) return '라인';
+  if(/Band\//i.test(u)) return '밴드';
+  if(/;\s?wv\)/.test(u)) return '앱 안 브라우저';
+  return '';
+}
+function showInAppGuide(){
+  const n = inAppName(); const box = $('inAppBox');
+  if(!n){ box.classList.add('hide'); return; }
+  box.innerHTML = `<b>${esc(n)}</b> 안에서는 구글 로그인이 막혀요.<br>오른쪽 위 메뉴에서 <b>다른 브라우저로 열기</b>를 눌러 크롬이나 사파리에서 열어 주세요.
+    <div style="margin-top:10px"><button class="btn sm" data-act="copyLink">이 주소 복사</button></div>`;
+  box.classList.remove('hide');
+}
+function login(){
+  if(inAppName()){ showInAppGuide(); toast('크롬이나 사파리에서 열어 주세요'); return; }
+  const btn = $('btnGoogle'); btn.disabled = true;
+  signInWithPopup(auth, provider)
+    .catch(e => {
+      const c = e.code || '';
+      if(c.includes('popup-closed') || c.includes('cancelled-popup')) return;
+      if(c.includes('network')){ toast('인터넷 연결을 확인해 주세요'); return; }
+      signInWithRedirect(auth, provider).catch(() => toast('구글 로그인을 열 수 없어요 · ' + (c || '알 수 없는 오류')));
+    })
+    .finally(() => { btn.disabled = false; });
+}
+getRedirectResult(auth).catch(e => { const c = e.code || ''; if(c && !c.includes('no-auth-event')) toast('구글 로그인 실패 · ' + c); });
+
+onAuthStateChanged(auth, async user => {
+  if(!user){ ME = null; show('scLogin'); showInAppGuide(); return; }
+  show('scLoading');
+  const email = (user.email || '').toLowerCase();
+  try{
+    let snap = await getDoc(doc(db, 'members', email));
+    if(!snap.exists() && email === OWNER_EMAIL){
+      await setDoc(doc(db, 'members', email), {name: (user.displayName || '관리자').slice(0, 30), role:'admin', active:true, createdAt: serverTimestamp()});
+      snap = await getDoc(doc(db, 'members', email));
+    }
+    if(!snap.exists() || snap.data().active === false){
+      const stopped = snap.exists();
+      $('naTitle').textContent = stopped ? '사용이 멈춘 계정이에요' : '등록되지 않은 계정이에요';
+      $('naNote').textContent = stopped ? '수강을 다시 시작하려면 선생님께 말씀해 주세요.' : '아래 주소를 선생님께 알려 주시면 등록해 드려요.';
+      $('naMail').textContent = email;
+      show('scNoAccess'); return;
+    }
+    ME = {email, ...snap.data()};
+    ADMIN = ME.role === 'admin' || email === OWNER_EMAIL;
+    await loadAll();
+    show('scApp'); render();
+  }catch(e){ console.error(e); show('scLogin'); toast(errText(e)); }
+});
+
+// ── 불러오기 ────────────────────────────────────
+async function loadAll(){
+  if(ADMIN){
+    const [sc, mb] = await Promise.all([getDocs(collection(db, 'scores')), getDocs(collection(db, 'members'))]);
+    scores = sortScores(sc.docs.map(d => ({id:d.id, ...d.data()})));
+    members = mb.docs.map(d => ({email:d.id, ...d.data()})).sort((a, b) => (a.name||'').localeCompare(b.name||'', 'ko'));
+  }else{
+    const ss = await getDocs(query(collection(db, 'shares'), where('email', '==', ME.email)));
+    myShares = new Map(ss.docs.map(d => [d.data().scoreId, {id:d.id, ...d.data()}]));
+    const docs = await Promise.all([...myShares.keys()].map(id => getDoc(doc(db, 'scores', id)).catch(() => null)));
+    scores = sortScores(docs.filter(d => d && d.exists()).map(d => ({id:d.id, ...d.data()})));
+  }
+  if(!S.cur && scores.length && matchMedia('(min-width:760px)').matches) S.cur = scores[0].id;
+}
+async function loadSharesFor(scoreId){
+  S.shareFor = scoreId; S.shareBusy = true; S.delAsk = false; render();
+  try{
+    const ss = await getDocs(query(collection(db, 'shares'), where('scoreId', '==', scoreId)));
+    if(S.shareFor !== scoreId) return;
+    S.shareMap = new Map(ss.docs.map(d => [d.data().email, {id:d.id, ...d.data()}]));
+    S.shareSel = new Set(S.shareMap.keys());
+  }catch(e){ toast(errText(e)); }
+  S.shareBusy = false; render();
+}
+async function loadSharesOf(email){
+  S.memFor = email; S.memBusy = true; S.memDelAsk = false; render();
+  try{
+    const ss = await getDocs(query(collection(db, 'shares'), where('email', '==', email)));
+    if(S.memFor !== email) return;
+    S.memMap = new Map(ss.docs.map(d => [d.data().scoreId, {id:d.id, ...d.data()}]));
+    S.memSel = new Set(S.memMap.keys());
+  }catch(e){ toast(errText(e)); }
+  S.memBusy = false; render();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  화면 그리기
+// ══════════════════════════════════════════════════════════════
+function navItems(){
+  return ADMIN
+    ? [['scores','악보',ICON.score],['members','회원',ICON.people],['add','악보 등록',ICON.add],['me','내 정보',ICON.me]]
+    : [['scores','내 악보',ICON.score],['me','내 정보',ICON.me]];
+}
+function render(){
+  if(!ME) return;
+  const nav = navItems();
+  $('railBtns').innerHTML = nav.map(([v, label, ic]) => `<button class="rb" data-act="go" data-view="${v}" aria-label="${label}" title="${label}" ${S.view===v?'aria-current="page"':''}>${ic}</button>`).join('');
+  $('tabs').innerHTML = nav.map(([v, label, ic]) => `<button data-act="go" data-view="${v}" ${S.view===v?'aria-current="page"':''}>${ic}${label}</button>`).join('');
+  const main = $('main');
+  // 다시 그려도 스크롤 위치와 포커스가 그대로 남도록
+  const keep = {}; ['.list','.share','.right','.viewer','.mdetail','.vAdd','.vMe'].forEach(sel => { const el = main.querySelector(sel); if(el) keep[sel] = el.scrollTop; });
+  const ae = document.activeElement, focusKey = ae && main.contains(ae) && ae.dataset && ae.dataset.act
+    ? `[data-act="${ae.dataset.act}"]${ae.dataset.email ? `[data-email="${CSS.escape(ae.dataset.email)}"]` : ''}${ae.dataset.id ? `[data-id="${CSS.escape(ae.dataset.id)}"]` : ''}${ae.dataset.view ? `[data-view="${ae.dataset.view}"]` : ''}${ae.dataset.f ? `[data-f="${CSS.escape(ae.dataset.f)}"]` : ''}` : '';
+  if(S.view === 'scores') main.innerHTML = viewScores();
+  else if(S.view === 'members') main.innerHTML = viewMembers();
+  else if(S.view === 'add') main.innerHTML = viewAdd();
+  else main.innerHTML = viewMe();
+  Object.entries(keep).forEach(([sel, top]) => { const el = main.querySelector(sel); if(el) el.scrollTop = top; });
+  if(focusKey){ const el = main.querySelector(focusKey); if(el) el.focus({preventScroll:true}); }
+  fitStage();
+}
+
+function chipsHTML(){
+  const kinds = [...new Set(scores.map(s => s.chip).filter(Boolean))];
+  if(kinds.length < 2) return '';
+  return `<div class="chips">${['전체', ...kinds].map(k => `<button class="chip" data-act="filter" data-f="${esc(k)}" aria-pressed="${S.filter===k}">${esc(k)}${k==='전체' ? ' ' + scores.length : ''}</button>`).join('')}</div>`;
+}
+function listHTML(){
+  const list = scores.filter(s => S.filter === '전체' || s.chip === S.filter);
+  if(!scores.length) return `<div class="empty">${ADMIN ? '등록된 악보가 없어요.<br><a href="#" data-act="go" data-view="add">악보 등록</a>에서 추가해 주세요.' : '아직 공유받은 악보가 없어요.<br>선생님이 악보를 공유하면 여기에 나타나요.'}</div>`;
+  const books = [...new Set(list.map(s => s.book || '기타'))];
+  return books.map(b => `<div class="group">${books.length > 1 || ADMIN ? `<div class="gh">${esc(b)}</div>` : ''}${
+    list.filter(s => (s.book || '기타') === b).map(s => {
+      const sh = myShares.get(s.id);
+      const line = ADMIN ? esc(s.eye || s.chip) : esc([s.book, s.chip].filter(Boolean).join(' · '));
+      const date = !ADMIN && sh ? `<span class="d">${mdText(toD(sh.sharedAt))} 공유</span>` : (ADMIN && s.src ? `<span class="d">${esc(s.src)}</span>` : '');
+      const isNew = !ADMIN && sh && !sh.openedAt;
+      return `<button class="item" data-act="open" data-id="${esc(s.id)}" aria-current="${S.cur===s.id}">
+        <span class="tx"><span class="k">${line}</span><span class="n">${esc(s.title)}</span>${date}</span>${isNew ? '<span class="badge">NEW</span>' : ''}</button>`;
+    }).join('')}</div>`).join('');
+}
+function viewScores(){
+  const cur = scores.find(s => s.id === S.cur);
+  if(ADMIN && cur && S.shareFor !== cur.id) setTimeout(() => loadSharesFor(cur.id));
+  return `<div class="vScores ${S.mOpen && cur ? 'm-open' : ''}">
+    <aside class="list" aria-label="악보 목록">
+      <div style="display:flex;flex-direction:column;gap:2px"><div class="eyebrow">DRUM SCORE</div><h1 class="t-title">${ADMIN ? '악보' : '내 악보'}</h1></div>
+      ${chipsHTML()}
+      ${listHTML()}
+    </aside>
+    <div class="right">
+      <main class="viewer" aria-label="악보 보기">${cur ? `
+        <div class="vbar">
+          <button class="btn iconbtn back" data-act="back" aria-label="목록으로">${ICON.back}</button>
+          <div class="tt"><span class="sub">${esc(cur.eye || cur.book)}</span><span class="t-title">${esc(cur.title)}</span></div>
+          <button class="btn primary" data-act="print">${ICON.print}인쇄</button>
+        </div>
+        <div class="stage" id="stage" data-id="${esc(cur.id)}"></div>` : `<div class="empty" style="margin:auto">${scores.length ? '왼쪽에서 악보를 골라 주세요' : ''}</div>`}
+      </main>
+      ${ADMIN && cur ? sharePanel(cur) : ''}
+    </div>
+  </div>`;
+}
+function sharePanel(cur){
+  const students = members.filter(m => m.role !== 'admin');
+  const q = S.shareQ.trim();
+  const shown = students.filter(m => !q || (m.name||'').includes(q) || m.email.includes(q.toLowerCase()));
+  const dirty = S.shareSel.size !== S.shareMap.size || [...S.shareSel].some(e => !S.shareMap.has(e));
+  return `<aside class="share" aria-label="공유 설정">
+    <div style="display:flex;flex-direction:column;gap:2px"><h2 class="t-title">공유 설정</h2><span class="sub">체크한 수강생만 이 페이지를 봅니다</span></div>
+    ${students.length > 6 ? `<label class="search">${ICON.find}<input id="shareQ" data-act="shareQ" placeholder="이름으로 찾기" aria-label="수강생 찾기" value="${esc(S.shareQ)}"></label>` : ''}
+    ${S.shareBusy ? '<div class="sub">불러오는 중</div>' : students.length ? `
+      <div class="rowbtns"><button class="btn sm" data-act="shareAll">모두 선택</button><button class="btn sm" data-act="shareNone">모두 해제</button></div>
+      <div class="checks">${shown.map(m => { const sh = S.shareMap.get(m.email), on = S.shareSel.has(m.email);
+        const st = sh ? (sh.openedAt ? '<span class="st on">열어봄</span>' : '<span class="st">안 열어봄</span>') : '';
+        return `<label class="check"><input type="checkbox" data-act="shareChk" data-email="${esc(m.email)}" ${on?'checked':''} ${m.active===false?'disabled':''}>
+          <span class="nm">${esc(m.name || m.email)}${m.active===false ? ' <span class="badge warn">정지</span>' : ''}<small>${esc(m.email)}</small></span>${st}</label>`; }).join('')}</div>
+      <div class="sharefoot"><span class="sub">${S.shareSel.size}명에게 공유${dirty ? ' · 저장 안 됨' : ' 중'}</span>
+        <button class="btn primary" data-act="shareSave" ${dirty ? '' : 'disabled'}>저장</button></div>`
+    : '<div class="empty">등록된 수강생이 없어요.<br><a href="#" data-act="go" data-view="members">회원 관리</a>에서 추가해 주세요.</div>'}
+    <div class="danger-zone">
+      <div class="rowbtns"><button class="btn sm" data-act="scoreEdit">악보 고치기</button>
+      ${S.delAsk ? '<button class="btn sm danger solid" data-act="scoreDelYes">정말 삭제</button><button class="btn sm" data-act="scoreDelNo">취소</button>' : '<button class="btn sm danger" data-act="scoreDel">악보 삭제</button>'}</div>
+      ${S.delAsk ? '<span class="sub">이 악보와 모든 공유가 지워져요. 되돌릴 수 없어요.</span>' : ''}
+    </div>
+  </aside>`;
+}
+
+function viewMembers(){
+  const cur = members.find(m => m.email === S.memFor);
+  return `<div class="vMembers ${S.mOpen && cur ? 'm-open' : ''}">
+    <aside class="list" aria-label="회원 목록">
+      <div style="display:flex;flex-direction:column;gap:2px"><div class="eyebrow">MEMBERS</div><h1 class="t-title">회원 관리</h1></div>
+      <form class="addform" data-form="memberAdd">
+        <label class="field">이름<input class="input" id="mName" required maxlength="30" placeholder="수강생 이름"></label>
+        <label class="field">구글 주소<input class="input" id="mEmail" type="email" required placeholder="name@gmail.com" autocapitalize="off" spellcheck="false"></label>
+        <div class="row"><select class="input" id="mRole" aria-label="역할"><option value="student">수강생</option><option value="admin">관리자</option></select>
+          <button class="btn primary" type="submit">추가</button></div>
+      </form>
+      <div class="group">${members.map(m => `<button class="item" data-act="memOpen" data-email="${esc(m.email)}" aria-current="${S.memFor===m.email}">
+        <span class="tx"><span class="n" style="font-size:16px">${esc(m.name || m.email)}</span><span class="k">${esc(m.email)}</span></span>
+        ${m.role==='admin' ? '<span class="badge quiet">관리자</span>' : ''}${m.active===false ? '<span class="badge warn">정지</span>' : ''}</button>`).join('')}</div>
+    </aside>
+    <section class="mdetail" aria-label="회원 정보">${cur ? memberDetail(cur) : '<div class="empty" style="margin:auto">왼쪽에서 회원을 골라 주세요</div>'}</section>
+  </div>`;
+}
+function memberDetail(m){
+  const self = m.email === ME.email || m.email === OWNER_EMAIL;
+  const dirty = S.memSel.size !== S.memMap.size || [...S.memSel].some(id => !S.memMap.has(id));
+  return `<div style="display:flex;align-items:center;gap:10px">
+      <button class="btn iconbtn back" data-act="memBack" aria-label="목록으로" style="display:none">${ICON.back}</button>
+      <h2 class="t-title">${esc(m.name || m.email)}</h2></div>
+    <dl class="kv"><dt>구글 주소</dt><dd>${esc(m.email)}</dd><dt>역할</dt><dd>${m.role==='admin'?'관리자':'수강생'}</dd><dt>상태</dt><dd>${m.active===false?'정지':'사용 중'}</dd></dl>
+    ${m.role !== 'admin' ? `
+      <div style="display:flex;flex-direction:column;gap:6px"><h3 class="t-title" style="margin:0;font-size:20px">받은 악보</h3><span class="sub">체크한 페이지를 이 수강생이 봅니다</span></div>
+      ${S.memBusy ? '<div class="sub">불러오는 중</div>' : scores.length ? `
+        <div class="checks">${scores.map(s => { const sh = S.memMap.get(s.id);
+          const st = sh ? (sh.openedAt ? '<span class="st on">열어봄</span>' : '<span class="st">안 열어봄</span>') : '';
+          return `<label class="check"><input type="checkbox" data-act="memChk" data-id="${esc(s.id)}" ${S.memSel.has(s.id)?'checked':''}>
+            <span class="nm">${esc(s.title)}<small>${esc([s.book, s.chip].filter(Boolean).join(' · '))}</small></span>${st}</label>`; }).join('')}</div>
+        <div class="sharefoot"><span class="sub">${S.memSel.size}장${dirty ? ' · 저장 안 됨' : ''}</span><button class="btn primary" data-act="memSave" ${dirty?'':'disabled'}>저장</button></div>`
+      : '<div class="sub">등록된 악보가 없어요</div>'}` : ''}
+    ${self ? '' : `<div class="danger-zone"><div class="rowbtns">
+      <button class="btn sm" data-act="memActive">${m.active===false ? '다시 사용' : '사용 정지'}</button>
+      ${S.memDelAsk ? '<button class="btn sm danger solid" data-act="memDelYes">정말 삭제</button><button class="btn sm" data-act="memDelNo">취소</button>' : '<button class="btn sm danger" data-act="memDel">회원 삭제</button>'}</div>
+      <span class="sub">${S.memDelAsk ? '회원과 받은 악보 공유가 모두 지워져요.' : '사용 정지는 공유를 그대로 두고 잠시 막아요.'}</span></div>`}`;
+}
+
+function viewAdd(){
+  const r = S.addResult;
+  return `<div class="vAdd"><div class="addwrap">
+    <div style="display:flex;flex-direction:column;gap:2px"><div class="eyebrow">NEW SCORE</div><h1 class="t-title">악보 등록</h1></div>
+    <span class="sub">받은 악보 등록 코드를 그대로 붙여넣고 미리보기를 눌러 주세요. 같은 id로 다시 등록하면 고쳐집니다.</span>
+    <textarea class="code" id="addText" data-act="addText" spellcheck="false" aria-label="악보 등록 코드" placeholder='[{"id":"ld-c1-01","title":"리니어 패턴 1", ...}]'>${esc(S.addText)}</textarea>
+    <div class="rowbtns"><button class="btn" data-act="addPreview">미리보기</button>
+      <button class="btn primary" data-act="addSave" ${r && !r.errs.length && r.items.length ? '' : 'disabled'}>${r && r.items.length && !r.errs.length ? r.items.length + '장 등록' : '등록'}</button>
+      ${S.addText ? '<button class="btn" data-act="addClear">비우기</button>' : ''}</div>
+    ${r ? (r.errs.length ? `<div class="errs"><b>고칠 곳이 ${r.errs.length}군데 있어요</b><ul>${r.errs.slice(0, 20).map(e => `<li>${esc(e)}</li>`).join('')}</ul></div>`
+         : `<div class="okline">${r.items.length}장 모두 읽었어요. 확인 후 등록을 눌러 주세요.${r.items.filter(it => scores.some(s => s.id === it.id)).length ? ` (그중 ${r.items.filter(it => scores.some(s => s.id === it.id)).length}장은 이미 있는 악보를 고쳐요)` : ''}</div>`) : ''}
+    ${r && r.items.length ? `<div class="thumbs">${r.items.map(it => `<div class="thumb">${paperHTML(it, 220)}<div class="cap"><b>${esc(it.title)}</b><span>${esc(it.id)} · ${esc(it.book)}</span></div></div>`).join('')}</div>` : ''}
+  </div></div>`;
+}
+function viewMe(){
+  return `<div class="vMe"><div class="mewrap">
+    <div style="display:flex;flex-direction:column;gap:2px"><div class="eyebrow">ACCOUNT</div><h1 class="t-title">내 정보</h1></div>
+    <dl class="kv"><dt>이름</dt><dd>${esc(ME.name)}</dd><dt>구글 주소</dt><dd>${esc(ME.email)}</dd><dt>역할</dt><dd>${ADMIN?'관리자':'수강생'}</dd>${ADMIN ? '' : `<dt>받은 악보</dt><dd>${scores.length}장</dd>`}</dl>
+    <div><button class="btn" data-act="logout">로그아웃</button></div>
+    <span class="sub">홈 화면에 추가하면 앱처럼 열 수 있어요. 사파리는 공유 버튼 › 홈 화면에 추가, 크롬은 메뉴 › 홈 화면에 추가.</span>
+  </div></div>`;
+}
+
+// ── 악보를 화면 폭에 맞추기 ─────────────────────────
+function fitStage(){
+  const st = document.getElementById('stage'); if(!st) return;
+  const cur = scores.find(s => s.id === st.dataset.id); if(!cur) return;
+  const pad = matchMedia('(max-width:759px)').matches ? 24 : 56;
+  const w = Math.min(794, Math.max(240, st.clientWidth - pad));
+  st.innerHTML = paperHTML(cur, w);
+}
+let rsT = 0;
+addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(fitStage, 80); });
+
+// ══════════════════════════════════════════════════════════════
+//  동작
+// ══════════════════════════════════════════════════════════════
+async function markOpened(id){
+  const sh = myShares.get(id);
+  if(ADMIN || !sh || sh.openedAt) return;
+  sh.openedAt = new Date();
+  try{ await updateDoc(doc(db, 'shares', sh.id), {openedAt: serverTimestamp()}); }catch(e){ console.warn(e); }
+}
+function doPrint(){
+  const cur = scores.find(s => s.id === S.cur); if(!cur) return;
+  $('printArea').innerHTML = pageHTML(cur, `${ME.name || ''} · ${ymd(new Date())}`);
+  setTimeout(() => window.print(), 50);
+}
+async function saveShares(){
+  const id = S.shareFor; if(!id) return;
+  const b = writeBatch(db);
+  for(const e of S.shareSel) if(!S.shareMap.has(e)) b.set(doc(db, 'shares', `${id}__${e}`), {scoreId:id, email:e, sharedAt:serverTimestamp(), openedAt:null});
+  for(const e of S.shareMap.keys()) if(!S.shareSel.has(e)) b.delete(doc(db, 'shares', `${id}__${e}`));
+  try{ await b.commit(); toast('공유를 저장했어요'); S.shareFor = null; await loadSharesFor(id); }catch(e){ toast(errText(e)); }
+}
+async function saveMemberShares(){
+  const em = S.memFor; if(!em) return;
+  const b = writeBatch(db);
+  for(const id of S.memSel) if(!S.memMap.has(id)) b.set(doc(db, 'shares', `${id}__${em}`), {scoreId:id, email:em, sharedAt:serverTimestamp(), openedAt:null});
+  for(const id of S.memMap.keys()) if(!S.memSel.has(id)) b.delete(doc(db, 'shares', `${id}__${em}`));
+  try{ await b.commit(); toast('받은 악보를 저장했어요'); S.shareFor = null; await loadSharesOf(em); }catch(e){ toast(errText(e)); }
+}
+async function deleteScore(){
+  const id = S.cur; if(!id) return;
+  try{
+    const ss = await getDocs(query(collection(db, 'shares'), where('scoreId', '==', id)));
+    const b = writeBatch(db);
+    ss.docs.forEach(d => b.delete(d.ref));
+    b.delete(doc(db, 'scores', id));
+    await b.commit();
+    scores = scores.filter(s => s.id !== id); S.cur = scores[0] ? scores[0].id : null; S.shareFor = null; S.delAsk = false; S.mOpen = false;
+    toast('악보를 삭제했어요'); render();
+  }catch(e){ toast(errText(e)); }
+}
+async function addMember(form){
+  const name = $('mName').value.trim(), email = $('mEmail').value.trim().toLowerCase(), role = $('mRole').value;
+  if(!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ toast('이름과 구글 주소를 확인해 주세요'); return; }
+  if(members.some(m => m.email === email)){ toast('이미 등록된 주소예요'); return; }
+  const data = {name, role: role === 'admin' ? 'admin' : 'student', active:true, createdAt: serverTimestamp()};
+  try{
+    await setDoc(doc(db, 'members', email), data);
+    members.push({email, ...data}); members.sort((a, b) => (a.name||'').localeCompare(b.name||'', 'ko'));
+    form.reset(); toast(`${name} 님을 등록했어요`);
+    S.mOpen = true; loadSharesOf(email);
+  }catch(e){ toast(errText(e)); }
+}
+async function toggleActive(){
+  const m = members.find(x => x.email === S.memFor); if(!m) return;
+  const next = m.active === false;
+  try{ await updateDoc(doc(db, 'members', m.email), {active: next}); m.active = next; toast(next ? '다시 사용할 수 있어요' : '사용을 멈췄어요'); render(); }catch(e){ toast(errText(e)); }
+}
+async function deleteMember(){
+  const em = S.memFor; if(!em || em === ME.email || em === OWNER_EMAIL) return;
+  try{
+    const ss = await getDocs(query(collection(db, 'shares'), where('email', '==', em)));
+    const b = writeBatch(db);
+    ss.docs.forEach(d => b.delete(d.ref));
+    b.delete(doc(db, 'members', em));
+    await b.commit();
+    members = members.filter(m => m.email !== em); S.memFor = null; S.memDelAsk = false; S.mOpen = false; S.shareFor = null;
+    toast('회원을 삭제했어요'); render();
+  }catch(e){ toast(errText(e)); }
+}
+function previewAdd(){
+  const txt = S.addText.trim();
+  if(!txt){ S.addResult = null; render(); return; }
+  let data;
+  try{ data = JSON.parse(txt); }
+  catch(_){ S.addResult = {errs:['코드 형식이 깨졌어요. 처음부터 끝까지 빠짐없이 복사했는지 확인해 주세요.'], items:[]}; render(); return; }
+  const arr = Array.isArray(data) ? data : [data];
+  const errs = [], items = [], seen = new Set();
+  arr.forEach((o, i) => { const r = validateScore(o, i); errs.push(...r.errs); if(r.clean){ if(seen.has(r.clean.id)) errs.push(`id "${r.clean.id}"가 두 번 나와요`); seen.add(r.clean.id); items.push(r.clean); } });
+  if(arr.length > 100) errs.push('한 번에 100장까지 등록할 수 있어요');
+  S.addResult = {errs, items}; render();
+}
+async function saveAdd(){
+  const r = S.addResult; if(!r || r.errs.length || !r.items.length) return;
+  try{
+    for(let i = 0; i < r.items.length; i += 400){
+      const b = writeBatch(db);
+      r.items.slice(i, i + 400).forEach(it => b.set(doc(db, 'scores', it.id), {...it, updatedAt: serverTimestamp()}));
+      await b.commit();
+    }
+    r.items.forEach(it => { const k = scores.findIndex(s => s.id === it.id); if(k >= 0) scores[k] = {...it}; else scores.push({...it}); });
+    sortScores(scores);
+    toast(`${r.items.length}장을 등록했어요`);
+    S.cur = r.items[0].id; S.shareFor = null; S.addText = ''; S.addResult = null; S.view = 'scores'; S.mOpen = true; render();
+  }catch(e){ toast(errText(e)); }
+}
+function editScore(){
+  const cur = scores.find(s => s.id === S.cur); if(!cur) return;
+  const {id, book, eye, title, chip, src, order, steps} = cur;
+  S.addText = JSON.stringify({id, book, eye, title, chip, src, order, steps}, null, 1);
+  S.addResult = null; S.view = 'add'; render(); previewAdd();
+}
+
+const ACT = {
+  login, logout: () => { signOut(auth).catch(() => {}); },
+  go: t => { S.view = t.dataset.view; S.mOpen = false; render(); },
+  filter: t => { S.filter = t.dataset.f; render(); },
+  open: t => { S.cur = t.dataset.id; S.mOpen = true; S.delAsk = false; render(); markOpened(S.cur); const v = document.querySelector('.viewer'); if(v) v.scrollTop = 0; },
+  back: () => { S.mOpen = false; render(); },
+  print: doPrint,
+  shareAll: () => { members.filter(m => m.role !== 'admin' && m.active !== false).forEach(m => S.shareSel.add(m.email)); render(); },
+  shareNone: () => { S.shareSel.clear(); render(); },
+  shareSave: saveShares,
+  scoreEdit: editScore,
+  scoreDel: () => { S.delAsk = true; render(); },
+  scoreDelNo: () => { S.delAsk = false; render(); },
+  scoreDelYes: deleteScore,
+  memOpen: t => { S.mOpen = true; loadSharesOf(t.dataset.email); },
+  memBack: () => { S.mOpen = false; render(); },
+  memSave: saveMemberShares,
+  memActive: toggleActive,
+  memDel: () => { S.memDelAsk = true; render(); },
+  memDelNo: () => { S.memDelAsk = false; render(); },
+  memDelYes: deleteMember,
+  addPreview: previewAdd,
+  addSave: saveAdd,
+  addClear: () => { S.addText = ''; S.addResult = null; render(); },
+  copyMail: () => copy($('naMail').textContent, '주소를 복사했어요'),
+  copyLink: () => copy(location.href, '주소를 복사했어요')
+};
+function copy(text, msg){
+  if(navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast(msg), () => toast(text));
+  else toast(text);
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]'); if(!t || t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') return;
+  const f = ACT[t.dataset.act]; if(!f) return;
+  if(t.tagName === 'A') e.preventDefault();
+  f(t, e);
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if(t.dataset.act === 'shareChk'){ t.checked ? S.shareSel.add(t.dataset.email) : S.shareSel.delete(t.dataset.email); render(); }
+  if(t.dataset.act === 'memChk'){ t.checked ? S.memSel.add(t.dataset.id) : S.memSel.delete(t.dataset.id); render(); }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if(t.dataset.act === 'addText') S.addText = t.value;
+  if(t.dataset.act === 'shareQ'){ S.shareQ = t.value; const pos = t.selectionStart; render(); const n = $('shareQ'); if(n){ n.focus(); n.setSelectionRange(pos, pos); } }
+});
+document.addEventListener('submit', e => {
+  const f = e.target; if(f.dataset.form !== 'memberAdd') return;
+  e.preventDefault(); addMember(f);
+});
+// 휴대폰에서 회원 상세의 뒤로 버튼 보이기
+const mq = matchMedia('(max-width:759px)');
+const syncBack = () => document.documentElement.classList.toggle('narrow', mq.matches);
+mq.addEventListener ? mq.addEventListener('change', syncBack) : mq.addListener(syncBack); syncBack();
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+<style>
+html.narrow .mdetail .back{display:inline-flex!important}
+</style>
+</body>
+</html>
