@@ -2,7 +2,7 @@
 // 앱 껍데기(화면 · 글씨체 · 로고)만 캐시하고, 악보 데이터(Firebase)는 항상 네트워크에서 가져옵니다.
 // 파일을 고쳐 올릴 때는 아래 버전 숫자를 하나 올려 주세요.
 
-const CACHE = 'rh-score-v7';
+const CACHE = 'rh-score-v8';
 const SHELL = ['./', './index.html', './manifest.json', './logo.png', './icon-192.png', './icon-512.png',
                './fonts/Cafe24Danjunghae-v2.0.woff2', './fonts/Cafe24Simplehae-v2.0.woff2', './fonts/Cafe24Lovingu.ttf'];
 

@@ -474,7 +474,7 @@ const firebaseConfig = {
 const OWNER_EMAIL = "artist4rhythm@gmail.com";
 
 // ③ 앱 버전 — 고쳐 올릴 때마다 여기와 version.json을 같이 올립니다
-const APP_VERSION = '1.7', APP_DATE = '2026.10.16';
+const APP_VERSION = '1.8', APP_DATE = '2026.10.16';
 
 // ══════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
@@ -582,12 +582,12 @@ function pageHTML(pg, footer){
 //    음표 길이: w 온 · h 2분 · q 4분 · e 8분 · s 16분 · t 32분
 //    쉼표: 앞에 r  (rw rh rq re rs rt)
 //    점음표: 뒤에 .   (q. e. rq.)
-//    악센트 >  · 다음 음과 붙임줄 ~  · 스티킹 /R /L (/RLRL 여러 줄)
+//    악센트 >  · 고스트 노트 ( (괄호 머리, 아주 작게)  · 다음 음과 붙임줄 ~  · 스티킹 /R /L (/RLRL 여러 줄)
 //    셋잇단: 3[ e e e ]   (괄호 안 길이 합이 2/3로 줄어듦)
 //    세기 표시: 뒤에 @글자 (q@1  e@+  e@2+)
 //    꾸밈음: 앞에 g (gq> 플램 · ggq> 드래그 · gggq 3개)
 //    롤 빗금: :1 :2 :3  (h:3~  e>:1)
-//    악기(머리 위치): =s 스네어 · =x 하이햇 · =o 열린 하이햇 · =y 라이드 · =c 심벌 · =t 탐 · =f 플로어탐 · =k 킥 · =p 하이햇 발 · =X 스틱 (여럿: =xs)
+//    악기(머리 위치): =s 스네어 · =x 하이햇 · =o 열린 하이햇 · =y 라이드 · =c 심벌 · =t 탐 · =f 플로어탐 · =k 킥 · =p 하이햇 발 · =X 크로스스틱(동그라미 x) (여럿: =xs)
 //  마디에 쓰는 표시 (음표 사이 아무 곳)
 //    #A → (A) · #[A] → 네모 A · |: 반복 시작 · :| 반복 끝 · ^1 ^2 1·2번 괄호
 //    T3/4 → 이 마디부터 박자 바꿈
@@ -610,10 +610,10 @@ function rParseTok(t){
   if(rm) t = t.replace(rm[0], '');
   const im = /=([sxoyctfkpX]+)/.exec(t), inst = im ? [...new Set(im[1].split(''))] : null;
   if(im) t = t.replace(im[0], '');
-  const m = /^(g{0,3})(r?)([whqest])(\.?)()([>~]*)(?:\/([RLrl]{1,4}))?([>~]*)(?:@([^\s@>~\/:=]{1,4}))?([>~]*)$/.exec(t);
+  const m = /^(g{0,3})(r?)([whqest])(\.?)()([>~(]*)(?:\/([RLrl]{1,4}))?([>~(]*)(?:@([^\s@>~\/:=(]{1,4}))?([>~(]*)$/.exec(t);
   if(!m) return null;
   const mods = m[6] + m[8] + m[10];
-  return {grace: m[1].length, rest: m[2] === 'r', base: m[3], dot: m[4] === '.', roll, inst, acc: mods.includes('>'), tie: mods.includes('~'), stick: m[7] ? m[7].toUpperCase() : '', count: m[9] || ''};
+  return {grace: m[1].length, rest: m[2] === 'r', base: m[3], dot: m[4] === '.', roll, inst, acc: mods.includes('>'), tie: mods.includes('~'), ghost: mods.includes('('), stick: m[7] ? m[7].toUpperCase() : '', count: m[9] || ''};
 }
 // 마디 문자열 → {ev, total, label, box, sim, empty, multi, free, repS, repE, volta, time, tail}
 function rParseBar(str, errs, where){
@@ -815,6 +815,8 @@ function rDrawLine(item, W, sp, opt){
       const ry = dir > 0 ? restUp : restDown;
       if(e.rest){ g += restG(e.x, ry, e.base); if(e.dot) g += dotG(e.x + 1.0*sp, ry - .5*sp); return; }
       (e.inst || [def]).forEach(c => { const p = posOf(c), y = yOf(p); g += ledger(e.x, p) + head(e.x, y, e.base, !!R_XHEAD[c]);
+        if(c === 'X' && e.base !== 'w' && e.base !== 'h') g += `<circle cx="${e.x}" cy="${y}" r="${.72*sp}" fill="none" stroke="${k}" stroke-width="${.1*sp}"/>`;
+        if(e.ghost && !R_XHEAD[c]) g += `<text x="${e.x - 1.25*sp}" y="${y + .5*sp}" style="font:400 ${1.5*sp}px ${serif}" fill="${k}">(</text><text x="${e.x + .72*sp}" y="${y + .5*sp}" style="font:400 ${1.5*sp}px ${serif}" fill="${k}">)</text>`;
         if(e.dot) g += dotG(e.x + 1.05*sp, (Math.round(p) % 2 === 0 ? y - .5*sp : y)); });
       (dir > 0 ? upNotes : dnNotes).push(e);
     });
