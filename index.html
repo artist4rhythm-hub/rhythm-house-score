@@ -474,7 +474,7 @@ const firebaseConfig = {
 const OWNER_EMAIL = "artist4rhythm@gmail.com";
 
 // ③ 앱 버전 — 고쳐 올릴 때마다 여기와 version.json을 같이 올립니다
-const APP_VERSION = '1.8', APP_DATE = '2026.10.16';
+const APP_VERSION = '1.9', APP_DATE = '2026.10.16';
 
 // ══════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
@@ -816,7 +816,7 @@ function rDrawLine(item, W, sp, opt){
       if(e.rest){ g += restG(e.x, ry, e.base); if(e.dot) g += dotG(e.x + 1.0*sp, ry - .5*sp); return; }
       (e.inst || [def]).forEach(c => { const p = posOf(c), y = yOf(p); g += ledger(e.x, p) + head(e.x, y, e.base, !!R_XHEAD[c]);
         if(c === 'X' && e.base !== 'w' && e.base !== 'h') g += `<circle cx="${e.x}" cy="${y}" r="${.72*sp}" fill="none" stroke="${k}" stroke-width="${.1*sp}"/>`;
-        if(e.ghost && !R_XHEAD[c]) g += `<text x="${e.x - 1.25*sp}" y="${y + .5*sp}" style="font:400 ${1.5*sp}px ${serif}" fill="${k}">(</text><text x="${e.x + .72*sp}" y="${y + .5*sp}" style="font:400 ${1.5*sp}px ${serif}" fill="${k}">)</text>`;
+        if(e.ghost && c === 's') g += `<text x="${e.x - 1.25*sp}" y="${y + .5*sp}" style="font:400 ${1.5*sp}px ${serif}" fill="${k}">(</text><text x="${e.x + .72*sp}" y="${y + .5*sp}" style="font:400 ${1.5*sp}px ${serif}" fill="${k}">)</text>`;
         if(e.dot) g += dotG(e.x + 1.05*sp, (Math.round(p) % 2 === 0 ? y - .5*sp : y)); });
       (dir > 0 ? upNotes : dnNotes).push(e);
     });
