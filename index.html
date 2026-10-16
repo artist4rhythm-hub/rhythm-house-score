@@ -474,7 +474,7 @@ const firebaseConfig = {
 const OWNER_EMAIL = "artist4rhythm@gmail.com";
 
 // ③ 앱 버전 — 고쳐 올릴 때마다 여기와 version.json을 같이 올립니다
-const APP_VERSION = '1.6', APP_DATE = '2026.10.16';
+const APP_VERSION = '1.7', APP_DATE = '2026.10.16';
 
 // ══════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
@@ -705,12 +705,12 @@ function rLayoutLine(item, opt){
 }
 // 줄에 무엇이 있는지 (위·아래 여백 계산용)
 function rLineFeatures(lay, item){
-  const f = {stickRows: 0, count: false, label: false, txt: false, volta: false, dyn: false, bassAcc: false, upMax: 5, downMin: 1, hasDown: false, ferm: false};
+  const f = {stickRows: 0, count: false, label: false, txt: false, volta: false, dyn: false, bassAcc: false, upMax: 5, upMin: 4, downMin: 1, hasDown: false, ferm: false};
   lay.bars.forEach(b => {
     if(b.label) f.label = true; if(b.volta) f.volta = true;
     const look = e => { if(e.txt) f.txt = true; if(e.dyn || e.hair || e.hairEnd || e.word) f.dyn = true; if(e.ferm) f.ferm = true; };
     b.ev.forEach(e => { look(e); if(e.stick) f.stickRows = Math.max(f.stickRows, e.stick.length); if(e.count) f.count = true;
-      if(!e.rest) (e.inst || ['s']).forEach(c => { f.upMax = Math.max(f.upMax, R_INST[c]); }); });
+      if(!e.rest) (e.inst || ['s']).forEach(c => { f.upMax = Math.max(f.upMax, R_INST[c]); f.upMin = Math.min(f.upMin, R_INST[c]); }); });
     if(b.tail) look(b.tail);
     if(b.bev.length) f.hasDown = true;
     b.bev.forEach(e => { look(e); if(e.acc) f.bassAcc = true; if(!e.rest) (e.inst || ['k']).forEach(c => { f.downMin = Math.min(f.downMin, R_INST[c]); }); });
@@ -722,7 +722,7 @@ function rLineFeatures(lay, item){
 function rSpace(F, stickBelow){
   const sRows = F.stickRows ? F.stickRows * 1.45 + .3 : 0;
   const above = (stickBelow ? 0 : sRows) + (F.count ? 1.7 : 0) + (F.label ? 1.9 : 0) + (F.volta ? 1.9 : 0) + (F.txt ? 1.9 : 0) + (F.ferm ? 1.2 : 0) + Math.max(0, F.upMax - 5) * .5 + 4.6;
-  const below = (F.hasDown ? 3.6 + Math.max(0, 1 - F.downMin) * .5 : 2.2) + (F.bassAcc ? .8 : 0) + (F.dyn ? 2.6 : 0) + (stickBelow ? sRows + .6 : 0);
+  const below = (F.hasDown ? 3.6 + Math.max(0, 1 - F.downMin) * .5 : 2.2 + Math.max(0, 1 - F.upMin) * .5) + (F.bassAcc ? .8 : 0) + (F.dyn ? 2.6 : 0) + (stickBelow ? sRows + .6 : 0);
   return {above, below, sRows};
 }
 
@@ -737,14 +737,14 @@ function rDrawLine(item, W, sp, opt){
   const posOf = c => one ? 4 : R_INST[c];
   const upHi = one ? 4 : F.upMax, stemTop = yOf(upHi) - 3.6*sp;
   const accY = stemTop - 1.25*sp, tupY = stemTop - .75*sp;
-  let rowY = accY - 1.0*sp;                      // 위로 쌓이는 글자 줄
+  let rowY = accY - 1.4*sp;                      // 위로 쌓이는 글자 줄
   const stY = rowY; if(F.stickRows && !stickBelow) rowY -= sRows*sp;
   const cntY = rowY; if(F.count) rowY -= 1.7*sp;
   const labY = rowY - .2*sp; if(F.label) rowY -= 1.9*sp;
   const volY = rowY + .1*sp; if(F.volta) rowY -= 1.9*sp;
-  const txtY = rowY + .3*sp;
+  const txtY = rowY;
   const downLow = one ? 4 : Math.min(F.downMin, 1), stemBot = yOf(downLow) + 3.2*sp;
-  const belowBase = F.hasDown ? Math.max(stemBot, bot) + (F.bassAcc ? 1.7 : .6)*sp : bot + (one ? -.2 : .6)*sp;
+  const belowBase = F.hasDown ? Math.max(stemBot, bot) + (F.bassAcc ? 1.7 : .6)*sp : Math.max(bot, one ? 0 : yOf(F.upMin) + .5*sp) + (one ? -.2 : .6)*sp;
   const dynY = belowBase + 1.6*sp;
   const stBelowY = (F.dyn ? dynY + .6*sp : belowBase) + 1.5*sp;
   const restUp = one ? yOf(4) : (F.hasDown ? yOf(6.5) : yOf(4)), restDown = yOf(.6);
@@ -866,13 +866,13 @@ function rDrawLine(item, W, sp, opt){
     });
     // 롤 빗금
     ev.forEach(e => { if(e.rest || !e.roll) return;
-      const x = e.base === 'w' ? e.x : sX(e), ref = dir > 0 ? yOf(Math.min(...e.ps)) : yOf(Math.max(...e.ps));
+      const x = e.base === 'w' ? e.x : sX(e), hp = (e.inst || ['s']).filter(c => !'kp'.includes(c)).map(posOf), rps = hp.length ? hp : e.ps, ref = dir > 0 ? yOf(Math.min(...rps)) : yOf(Math.max(...rps));
       const yc0 = e.base === 'w' ? ref - dir*1.7*sp : ref - dir*(e.level >= 1 ? 1.75 : 2.1)*sp;
       for(let i = 0; i < e.roll; i++){ const y = yc0 + (i - (e.roll - 1) / 2) * .6*sp;
         g += `<line x1="${x-.6*sp}" y1="${y+.28*sp}" x2="${x+.6*sp}" y2="${y-.28*sp}" stroke="${k}" stroke-width="${.24*sp}"/>`; } });
     // 꾸밈음 (위 성부만)
     if(dir > 0) ev.forEach(e => { if(e.rest || !e.grace) return;
-      const n = e.grace, gx = i => e.x - 1.0*sp - (n - i) * 1.05*sp, gy = yOf(Math.max(...e.ps)) - .25*sp, gt = gy - 2.4*sp, gs = gx0 => gx0 + .36*sp;
+      const n = e.grace, gx = i => e.x - 1.0*sp - (n - i) * 1.05*sp, gy = yOf(Math.max(...((e.inst || ['s']).filter(c => 'stfX'.includes(c)).map(posOf).concat((e.inst || ['s']).some(c => 'stfX'.includes(c)) ? [] : e.ps)))) - .25*sp, gt = gy - 2.4*sp, gs = gx0 => gx0 + .36*sp;
       for(let i = 0; i < n; i++){ const x = gx(i);
         g += `<path fill="${k}" d="${rEll(x, gy, .4*sp, .29*sp, -20)}"/><line x1="${gs(x)}" x2="${gs(x)}" y1="${gy-.1*sp}" y2="${gt}" stroke="${k}" stroke-width="${.09*sp}"/>`; }
       if(n === 1){ const x = gs(gx(0));
