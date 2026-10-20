@@ -370,7 +370,7 @@ textarea.code{width:100%;min-height:220px;border:1px solid var(--line-2);border-
 .page .rh-col{display:flex;flex-direction:column}
 .page .rh-col > .rh-line{flex:1 1 0}
 .page .rh-sub{flex:none;font-size:12px;color:#555;margin:-2px 0 4px}
-.page .rh-sys{flex:2 1 0;display:flex;flex-direction:column;border-left:3px solid #111;margin-left:30px;padding-left:0;position:relative}
+.page .rh-sys{flex:2 1 0;display:flex;flex-direction:column;border-left:3px solid #111;margin:4px 0 12px 30px;padding-left:0;position:relative}
 .page .rh-sys > .rh-line{flex:1 1 0;margin-left:-33px}
 
 /* ── 인쇄: 악보 한 장만 A4로 ───────────────────── */
@@ -499,7 +499,7 @@ const firebaseConfig = {
 const OWNER_EMAIL = "artist4rhythm@gmail.com";
 
 // ③ 앱 버전 — 고쳐 올릴 때마다 여기와 version.json을 같이 올립니다
-const APP_VERSION = '2.4', APP_DATE = '2026.10.19';
+const APP_VERSION = '2.5', APP_DATE = '2026.10.20';
 
 // ══════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
@@ -813,13 +813,20 @@ function rLayoutLine(item, opt){
     let bev = [];
     if(bassStr){ const BP = rParseBar(bassStr, [], ''); if(!BP.sim && !BP.empty && !BP.multi) bev = BP.ev; }
     else if(opt && opt.split){ const SP = rSplitEv(P.ev, time, P.grp); if(SP){ P.ev = SP.up; bev = rParseBar(SP.dn, [], '').ev; } }
-    const ons = [...new Set(P.ev.map(e => +e.onset.toFixed(3)).concat(bev.map(e => +e.onset.toFixed(3))))].sort((a, c) => a - c);
+    let pev = [], pExtraL = 0, pExtraR = 0;
+    if(opt && opt.partner && opt.partner.bars[bi] != null){
+      const Q = rParseBar(opt.partner.bars[bi], [], '');
+      if(!Q.sim && !Q.empty && !Q.multi){ pev = Q.ev.slice();
+        const qb = opt.partner.bass && opt.partner.bass[bi]; if(qb){ const QB = rParseBar(qb, [], ''); if(!QB.sim && !QB.empty && !QB.multi) pev = pev.concat(QB.ev); } }
+      pExtraL = (Q.repS ? 1.6 : 0) + (Q.time ? 3.4 : 0); pExtraR = Q.repE ? 1.6 : 0;
+    }
+    const ons = [...new Set(P.ev.map(e => +e.onset.toFixed(3)).concat(bev.map(e => +e.onset.toFixed(3)), pev.map(e => +e.onset.toFixed(3))))].sort((a, c) => a - c);
     const pos = new Map(); let u = 0;
     ons.forEach((o, i) => {
-      const g = Math.max(0, ...P.ev.filter(e => Math.abs(e.onset - o) < 1e-3).map(e => e.grace || 0));
+      const g = Math.max(0, ...P.ev.concat(pev).filter(e => Math.abs(e.onset - o) < 1e-3).map(e => e.grace || 0));
       if(g) u += .9 + g * 1.05;   // 꾸밈음 자리
       pos.set(o, u); u += rWeight((i + 1 < ons.length ? ons[i+1] : barT) - o); });
-    return {...P, bev, pos, units: Math.max(u, 2), extraL, extraR, curTime: time};
+    return {...P, bev, pos, units: Math.max(u, 2), extraL: Math.max(extraL, pExtraL), extraR: Math.max(extraR, pExtraR), curTime: time};
   });
   return {bars, endTime: time, units: bars.reduce((a, b) => a + b.units + b.extraL + b.extraR + R_PAD_L + R_PAD_R, 0)};
 }
@@ -1093,10 +1100,11 @@ function rPageScale(pg, W){
   const lw = (W - 24) / 2;
   let spW = 7.2, nHead = 0, nShort = 0, nLong = 0, t = pg.time, sumH = 0;
   const shortH = [];
-  pg.items.forEach(it => {
+  pg.items.forEach((it, i) => {
     if(it.h){ nHead += it.sub ? 1.6 : 1; if(it.time) t = it.time; return; }
     const short = rShort(pg, it); short ? nShort++ : nLong++;
-    const lay = rLayoutLine(it, {time: it.time || t, bass: pg.bass, split: rSplitOn(pg)});
+    const pt = it.sys === 'a' && pg.items[i+1] && pg.items[i+1].sys === 'b' ? pg.items[i+1] : it.sys === 'b' && pg.items[i-1] && pg.items[i-1].sys === 'a' ? pg.items[i-1] : null;
+    const lay = rLayoutLine(it, {time: it.time || t, bass: pg.bass, split: rSplitOn(pg), partner: pt});
     t = lay.endTime;
     const sp = rSpace(rLineFeatures(lay, it), pg.stick === 'below'), h = sp.above + 4 + sp.below;
     if(short) shortH.push(h); else sumH += h;
@@ -1117,10 +1125,12 @@ function rhythmPageHTML(pg, footer, escf){
   const {sp, lw} = rPageScale(pg, W);
   let first = true, body = '', t = pg.time, shortBuf = [], sys = null;
   const opt0 = {bass: pg.bass, staff: pg.staff === 1 ? 1 : 5, stickBelow: pg.stick === 'below', split: rSplitOn(pg), hideLowRests: rHideLow(pg)};
+  const partnerOf = i => { const it = pg.items[i]; if(it.sys === 'a' && pg.items[i+1] && pg.items[i+1].sys === 'b') return pg.items[i+1]; if(it.sys === 'b' && pg.items[i-1] && pg.items[i-1].sys === 'a') return pg.items[i-1]; return null; };
+  let sysT = null;
   const line = (it, i, showTime, width, time) => {
     const next = pg.items[i+1];
     const final = it.end === true || (it.end !== false && (!next || !!next.h || (!!it.n && !(next && next.sys === 'b'))));
-    const r = rDrawLine(it, width, sp, {...opt0, staff: it.staff === 1 ? 1 : it.staff === 5 ? 5 : opt0.staff, time, showTime, final});
+    const r = rDrawLine(it, width, sp, {...opt0, staff: it.staff === 1 ? 1 : it.staff === 5 ? 5 : opt0.staff, time, showTime, final, partner: partnerOf(i)});
     return {html: `<div class="rh-line"><span class="rh-n">${E(it.n || '')}</span>${r.svg}</div>`, endTime: r.endTime};
   };
   const flush = () => {
@@ -1137,7 +1147,8 @@ function rhythmPageHTML(pg, footer, escf){
     const time = it.time || t;
     if(rShort(pg, it)){ const r = line(it, i, shortBuf.length === 0 || shortBuf.length === Math.ceil((runN[i] || 1) / 2), lw, time); shortBuf.push(r.html); t = r.endTime; first = false; return; }
     flush();
-    const r = line(it, i, first || !!it.time || (it.sys === 'b' && sys && sys.showT), W, time); t = r.endTime;
+    if(it.sys === 'a') sysT = time;
+    const r = line(it, i, first || !!it.time || (it.sys === 'b' && sys && sys.showT), W, it.sys === 'b' && sys && sysT ? sysT : time); t = r.endTime;
     if(it.sys === 'a'){ if(sys) body += sys.join(''); sys = [r.html]; sys.showT = first || !!it.time; first = false; return; }
     first = false;
     if(it.sys === 'b' && sys){ body += `<div class="rh-sys">${sys.join('')}${r.html}</div>`; sys = null; return; }
