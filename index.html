@@ -249,6 +249,25 @@ a{color:var(--g)}
 .pltg[aria-pressed="true"]::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--g);margin-right:6px;display:inline-block}
 .coach .cbig .iconbtn{width:44px;height:44px;font-size:22px}
 .pfill{flex:1}
+.ptin{width:58px;height:36px;border:1px solid var(--line-2);border-radius:9px;background:var(--paper);color:var(--g);font:600 18px/1 var(--f-body);text-align:center;font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield}
+.ptin::-webkit-outer-spin-button,.ptin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ptin:focus{outline:2px solid var(--g);outline-offset:1px}
+.ptin.big{width:120px;height:62px;font:400 46px/1 var(--f-title);border-color:transparent;background:transparent}
+.ptin.big:hover,.ptin.big:focus{border-color:var(--line-2);background:var(--paper)}
+.pbar{position:relative}
+.pmix{position:absolute;left:16px;bottom:calc(100% + 8px);z-index:35;width:340px;max-width:calc(100vw - 32px);background:var(--paper);border:1px solid var(--line-2);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.22);padding:10px 14px 12px;display:flex;flex-direction:column;gap:10px}
+.pmix .mh{display:flex;align-items:center;justify-content:space-between}
+.pmix .mh .iconbtn{width:32px;height:32px}
+.mrow{display:flex;align-items:center;gap:10px}
+.mrow .pltg{width:104px;flex:none;justify-content:center}
+.mrange{flex:1;min-width:80px;accent-color:var(--g)}
+.mval{width:28px;text-align:right;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mlab{width:104px;flex:none;font-size:13px;color:var(--muted)}
+.mcred{font-size:11px;color:var(--muted)}
+.coach .cmix{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:8px}
+.coach .lnk{border:0;background:none;color:var(--g);text-decoration:underline;font-size:12px;padding:0;cursor:pointer}
+.pspin{width:18px;height:18px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:plspin .8s linear infinite;display:inline-block}
+@keyframes plspin{to{transform:rotate(360deg)}}
 .pl-li{min-width:22px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600}
 .pbar .seg button{padding:6px 12px;font-size:13px}
 .plhl{position:fixed;pointer-events:none;border-radius:8px;background:rgba(232,163,23,.13);box-shadow:0 0 0 2px rgba(232,163,23,.75);display:none;transition:top .15s,left .15s,width .15s,height .15s}
@@ -533,7 +552,7 @@ const firebaseConfig = {
 const OWNER_EMAIL = "artist4rhythm@gmail.com";
 
 // ③ 앱 버전 — 고쳐 올릴 때마다 여기와 version.json을 같이 올립니다
-const APP_VERSION = '2.6', APP_DATE = '2026.10.21';
+const APP_VERSION = '2.7', APP_DATE = '2026.10.21';
 
 // ══════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
@@ -549,6 +568,7 @@ const ymd = d => `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.$
 function errText(e){ const c = (e && e.code) || ''; if(c.includes('permission')) return '권한이 없어요'; if(c.includes('unavailable') || c.includes('network')) return '인터넷 연결을 확인해 주세요'; return '문제가 생겼어요' + (c ? ' · ' + c : ''); }
 
 const ICON = {
+  vol: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>',
   metro: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l4 18H5z"/><path d="M12 15l5-8"/><path d="M8 15h8"/></svg>',
   voices: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h18M3 11h18M3 15h18"/><path d="M8 4v7M16 18v-7"/><circle cx="7" cy="11" r="1.6" fill="currentColor"/><circle cx="15" cy="15" r="1.6" fill="currentColor"/></svg>',
   score:'<svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
@@ -1816,6 +1836,7 @@ document.addEventListener('keydown', e => {
     if((e.key === 'p' || e.key === 'P') && S.reading && S.view === 'scores' && !(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'))){ e.preventDefault(); plToggle(); }
     return;
   }
+  if(e.target && e.target.tagName === 'INPUT' && e.key !== 'Escape') return;   // 빠르기 숫자 쓰는 중
   e.stopImmediatePropagation();
   const k = e.key;
   if(k === 'Escape'){ if(!document.fullscreenElement) fvClose(); }
@@ -1851,10 +1872,13 @@ const PL = {
   ctx: null, out: null, noise: null, on: false, raf: 0, timer: 0,
   tempo: +lsGet('rh-tempo') || 0, click: lsGet('rh-click') !== '0', notes: lsGet('rh-notes') !== '0', count: lsGet('rh-count') === '1',
   loop: lsGet('rh-loop') || 'line', sel: {pid: '', li: 0}, seq: null, t0: 0, next: 0, rep: 0, coach: false,
-  every: +(lsGet('rh-every') || 4), step: +(lsGet('rh-step') || 0), gap: lsGet('rh-gap') === '1', baseTempo: 0
+  every: +(lsGet('rh-every') || 4), step: +(lsGet('rh-step') || 0), gap: lsGet('rh-gap') === '1', baseTempo: 0,
+  volD: lsGet('rh-vold') === '' ? 85 : +lsGet('rh-vold'), volC: lsGet('rh-volc') === '' ? 60 : +lsGet('rh-volc'),
+  real: lsGet('rh-kit') !== 'synth', kit: null, kitP: null, mix: false, taps: []
 };
 function plSave(){ lsSet('rh-tempo', PL.tempo); lsSet('rh-click', PL.click ? '1' : '0'); lsSet('rh-notes', PL.notes ? '1' : '0'); lsSet('rh-count', PL.count ? '1' : '0');
-  lsSet('rh-loop', PL.loop); lsSet('rh-every', PL.every); lsSet('rh-step', PL.step); lsSet('rh-gap', PL.gap ? '1' : '0'); }
+  lsSet('rh-loop', PL.loop); lsSet('rh-every', PL.every); lsSet('rh-step', PL.step); lsSet('rh-gap', PL.gap ? '1' : '0');
+  lsSet('rh-vold', PL.volD); lsSet('rh-volc', PL.volC); lsSet('rh-kit', PL.real ? 'real' : 'synth'); }
 // 지금 보고 있는 쪽
 function plPages(){ return FV.on ? fvPages() : (S.reading ? bookPages(S.reading) : []); }
 function plCurPage(){
@@ -1886,8 +1910,10 @@ function plTempoHint(pg, gi){
   return 80;
 }
 // 한 묶음 → 소리 목록 {t 칸, ins, vel, g 꾸밈음, roll, d 길이} · 마디 목록
+// 세기: 악센트 .95 · 보통 .62 · 고스트 .3 에 셈여림(pp ~ ff) · 점점 세게 / 여리게를 곱함
+const PL_DYN = {ppp: .32, pp: .45, p: .6, mp: .8, mf: 1, f: 1.15, ff: 1.3, fff: 1.45, fp: 1.15, sfz: 1.3, sf: 1.3, fz: 1.3};
 function plBuild(g, pg){
-  const ev = [], bars = []; let time = g.start, off = 0;
+  const ev = [], bars = [], marks = []; let time = g.start, off = 0;
   const nb = Math.max(...g.items.map(it => it.bars.length)), last = new Map(), tie = new Map();
   for(let bi = 0; bi < nb; bi++){
     let T = 0;
@@ -1897,41 +1923,87 @@ function plBuild(g, pg){
       if(P.sim && last.has(it)) P = last.get(it); else if(!P.sim && !P.empty && !P.multi) last.set(it, P);
       const barT = rBarTicks(time) * (P.multi || 1); T = Math.max(T, barT);
       const add = (list, def, key) => list.forEach(e => {
+        if(e.dyn || e.hair || e.hairEnd || e.word) marks.push({t: off + e.onset, dyn: e.dyn, hair: e.hair || (/^cresc/.test(e.word || '') ? '<' : /^(dim|decresc)/.test(e.word || '') ? '>' : ''), end: !!e.hairEnd});
         if(e.rest){ tie.set(key, false); return; }
         const held = tie.get(key); tie.set(key, !!e.tie); if(held) return;    // 붙임줄로 이어진 음은 다시 치지 않음
-        const vel = e.acc ? 1 : e.ghost ? .28 : .7;
-        ev.push({t: off + e.onset, ins: e.inst || [def], vel, g: e.grace || 0, roll: e.roll || 0, d: e.ticks}); });
+        const vel = e.acc ? .95 : e.ghost ? .3 : .62;
+        ev.push({t: off + e.onset, ins: e.inst || [def], vel, acc: !!e.acc, g: e.grace || 0, roll: e.roll || 0, d: e.ticks}); });
       if(!P.sim && !P.empty && !P.multi) add(P.ev, 's', it);
       if(it.bass && it.bass[bi]){ const Q = rParseBar(it.bass[bi], [], ''); if(!Q.sim && !Q.empty && !Q.multi) add(Q.ev, 'k', 'b' + k); }
-      else if(pg && pg.bass === 'beat' && k === 0 && !P.multi && !P.empty){ for(let q = 0; q < barT; q += 96) ev.push({t: off + q, ins: ['p'], vel: .5, g: 0, roll: 0, d: 96}); }
+      else if(pg && pg.bass === 'beat' && k === 0 && !P.multi && !P.empty){ for(let q = 0; q < barT; q += 96) ev.push({t: off + q, ins: ['p'], vel: .45, g: 0, roll: 0, d: 96}); }
     });
     bars.push({t0: off, T, time}); off += T;
   }
   ev.sort((a, b) => a.t - b.t);
+  // 셈여림 곡선 (꺾은선): 표시가 없으면 1
+  marks.sort((a, b) => a.t - b.t);
+  const pts = [[0, 1]]; let cur = 1;
+  marks.forEach((m, i) => {
+    if(m.dyn && PL_DYN[m.dyn]){ pts.push([m.t - .01, cur]); cur = PL_DYN[m.dyn]; pts.push([m.t, cur]); }
+    if(m.hair){ const nx = marks.slice(i + 1).find(x => x.end || x.dyn || x.hair), t1 = nx ? nx.t : off;
+      const tgt = nx && nx.dyn && PL_DYN[nx.dyn] ? PL_DYN[nx.dyn] : cur * (m.hair === '<' ? 1.35 : 1 / 1.35);
+      pts.push([m.t, cur], [Math.max(m.t + 1, t1), tgt]); cur = tgt; }
+  });
+  pts.sort((a, b) => a[0] - b[0]);
+  const lv = t => { let k = 0; while(k + 1 < pts.length && pts[k + 1][0] <= t) k++; const a = pts[k], b = pts[k + 1];
+    return b ? a[1] + (b[1] - a[1]) * (t - a[0]) / Math.max(1e-6, b[0] - a[0]) : a[1]; };
+  ev.forEach(e => { e.vel = Math.min(1, e.vel * lv(e.t)); });
   return {ev, bars, total: off};
 }
 // ── 소리 만들기
+// 실제 드럼: sounds/kit 의 녹음 소리(AVL Drumkits · Glen MacArthur · CC BY-SA 3.0), 악기마다 세기 5단계
+const PL_KIT = {k: 'kick', s: 'snare', X: 'xstick', x: 'hhc', o: 'hho', p: 'hhp', y: 'ride', c: 'crash', t: 'tom1', f: 'floor'};
+const PL_MIX = {k: [1, 0], s: [.85, -.12], X: [.7, -.12], x: [.5, -.3], o: [.5, -.3], p: [.45, -.3], y: [.5, .35], c: [.55, -.2], t: [.8, -.05], f: [.85, .3]};   // [크기, 왼쪽(-) 오른쪽(+)]
 function plCtx(){
   if(PL.ctx) return PL.ctx;
   const C = window.AudioContext || window.webkitAudioContext; if(!C) return null;
-  const ctx = new C(), comp = ctx.createDynamicsCompressor(), out = ctx.createGain();
-  out.gain.value = .8; out.connect(comp); comp.connect(ctx.destination);
+  const ctx = new C(), lim = ctx.createDynamicsCompressor();
+  // 봉우리만 살짝 누르는 리미터 (셈여림은 그대로 살림)
+  lim.threshold.value = -4; lim.knee.value = 2; lim.ratio.value = 12; lim.attack.value = .002; lim.release.value = .12; lim.connect(ctx.destination);
+  const drum = ctx.createGain(), click = ctx.createGain(); drum.connect(lim); click.connect(lim);
   const nb = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), d = nb.getChannelData(0);
   for(let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  PL.ctx = ctx; PL.out = out; PL.noise = nb; return ctx;
+  PL.ctx = ctx; PL.drum = drum; PL.clickBus = click; PL.out = drum; PL.noise = nb; plVolApply(); return ctx;
+}
+function plVolApply(){ if(!PL.ctx) return; const g = v => Math.pow(Math.max(0, Math.min(100, v)) / 100, 2) * 1.6;
+  PL.drum.gain.setTargetAtTime(g(PL.volD), PL.ctx.currentTime, .02); PL.clickBus.gain.setTargetAtTime(g(PL.volC), PL.ctx.currentTime, .02); }
+function plLoadKit(){
+  if(PL.kitP) return PL.kitP;
+  const ctx = PL.ctx, kit = {};
+  const one = (name, v) => fetch(`sounds/kit/${name}-${v}.mp3`).then(r => { if(!r.ok) throw 0; return r.arrayBuffer(); })
+    .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
+    .then(buf => { const d = buf.getChannelData(0); let pk = 0; for(let i = 0; i < d.length; i++) pk = Math.max(pk, Math.abs(d[i]));
+      let o = 0; while(o < d.length && Math.abs(d[o]) < pk * .02) o++;          // 앞쪽 빈 소리 건너뛰기 (박에 딱 맞게)
+      (kit[name] = kit[name] || [])[v - 1] = {buf, off: Math.max(0, o - 24) / buf.sampleRate}; });
+  const jobs = []; Object.values(PL_KIT).forEach(n => { for(let v = 1; v <= 5; v++) jobs.push(one(n, v).catch(() => {})); });
+  PL.kitP = Promise.all(jobs).then(() => { PL.kit = kit; return kit; });
+  return PL.kitP;
 }
 function plEnv(g, t, v, a, dec){ g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(v, .0002), t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + dec); }
-function plNoise(t, v, type, f, q, dec){
+function plNoise(t, v, type, f, q, dec, bus){
   const c = PL.ctx, s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();
   s.buffer = PL.noise; fl.type = type; fl.frequency.value = f; fl.Q.value = q || .7;
-  s.connect(fl); fl.connect(g); g.connect(PL.out); plEnv(g, t, v, .002, dec); s.start(t, Math.random() * .5); s.stop(t + dec + .05);
+  s.connect(fl); fl.connect(g); g.connect(bus || PL.drum); plEnv(g, t, v, .002, dec); s.start(t, Math.random() * .5); s.stop(t + dec + .05);
 }
-function plTone(t, v, type, f0, f1, dec){
+function plTone(t, v, type, f0, f1, dec, bus){
   const c = PL.ctx, o = c.createOscillator(), g = c.createGain();
   o.type = type; o.frequency.setValueAtTime(f0, t); if(f1) o.frequency.exponentialRampToValueAtTime(f1, t + dec * .6);
-  o.connect(g); g.connect(PL.out); plEnv(g, t, v, .002, dec); o.start(t); o.stop(t + dec + .05);
+  o.connect(g); g.connect(bus || PL.drum); plEnv(g, t, v, .002, dec); o.start(t); o.stop(t + dec + .05);
 }
 function plHit(c, t, v){
+  v = Math.max(.02, Math.min(1, v * (1 + (Math.random() - .5) * .06)));      // 사람 손처럼 아주 조금씩 다르게
+  const set = PL.real && PL.kit && PL.kit[PL_KIT[c]];
+  if(set){
+    const L = Math.max(1, Math.min(5, Math.ceil(v * 5 - .15))), smp = set[L - 1] || set.find(Boolean); if(!smp) return;
+    const ctx = PL.ctx, src = ctx.createBufferSource(), g = ctx.createGain(), [amp, pan] = PL_MIX[c] || [.8, 0];
+    src.buffer = smp.buf; g.gain.value = Math.pow(v, 1.5) * amp;
+    let node = g; if(ctx.createStereoPanner){ const pn = ctx.createStereoPanner(); pn.pan.value = pan; g.connect(pn); node = pn; }
+    src.connect(g); node.connect(PL.drum);
+    if('xpo'.includes(c) && PL.openHat){ try{ PL.openHat.g.gain.setTargetAtTime(0, Math.max(t, PL.openHat.t), .015); }catch(_){} PL.openHat = null; }   // 하이햇 닫으면 열린 소리 멈춤
+    if(c === 'o') PL.openHat = {g, t};
+    src.start(t, smp.off); return;
+  }
+  v = Math.pow(v, 1.3);
   switch(c){
     case 'k': plTone(t, 1.0 * v, 'sine', 150, 45, .32); plNoise(t, .08 * v, 'lowpass', 1200, .7, .02); break;
     case 's': plNoise(t, .7 * v, 'bandpass', 1900, .8, .17); plTone(t, .35 * v, 'triangle', 200, 160, .09); break;
@@ -1945,12 +2017,16 @@ function plHit(c, t, v){
     case 'X': plNoise(t, .45 * v, 'bandpass', 3200, 4, .04); plTone(t, .25 * v, 'square', 1250, 0, .02); break;
   }
 }
-function plClick(t, strong){ plTone(t, strong ? .5 : .32, 'sine', strong ? 2200 : 1500, 0, .035); }
+function plClick(t, strong){ plTone(t, strong ? .5 : .3, 'sine', strong ? 2000 : 1400, 0, .035, PL.clickBus); }
 // ── 재생
 function plBeatTicks(time){ const [n, d] = R_TIME[time] || [4, 4]; return (d === 8 && n % 3 === 0) ? 144 : 384 / d; }
 function plStart(){
   const ctx = plCtx(); if(!ctx) { toast('이 브라우저는 소리 재생을 지원하지 않아요'); return; }
   if(ctx.state === 'suspended') ctx.resume();
+  if(PL.real && !PL.kit){ if(PL.loading) return; PL.loading = true; plUI();
+    const tm = setTimeout(() => toast('실제 드럼 소리를 불러오는 중이에요 (처음 한 번만)'), 300);
+    plLoadKit().then(k => { clearTimeout(tm); PL.loading = false; if(!Object.keys(k).length){ PL.real = false; toast('드럼 소리 파일을 찾지 못해 간단한 소리로 재생해요'); } plStart(); });
+    return; }
   const pg = plCurPage(); const gs = plGroups(pg); if(!gs.length){ toast('이 쪽에는 재생할 리듬 줄이 없어요'); return; }
   PL.sel.li = Math.min(PL.sel.li, gs.length - 1);
   if(!PL.tempo) PL.tempo = plTempoHint(pg, PL.sel.li);
@@ -1978,10 +2054,10 @@ function plTick(){
     const e = S0.ev[PL.next++], t = PL.t0 + e.t * spt;
     if(!PL.notes) continue;
     e.ins.forEach(c => {
-      if(e.roll){ const step = {1: 48, 2: 24, 3: 12}[e.roll] || 24, n = Math.max(1, Math.round(e.d / step));
-        for(let i = 0; i < n; i++) plHit(c, t + i * step * spt, e.vel * (i ? .75 : 1)); }
+      if(e.roll){ const step = {1: 48, 2: 24, 3: 12}[e.roll] || 24, n = Math.max(1, Math.round(e.d / step)), bz = e.roll === 3;
+        for(let i = 0; i < n; i++) plHit(c, t + i * step * spt + (bz ? Math.random() * .006 : 0), e.vel * (i ? (bz ? .55 : .8) : 1)); }
       else plHit(c, t, e.vel);
-      if(e.g && 'stfX'.includes(c)){ for(let j = 1; j <= e.g; j++) plHit(c, t - j * .028, .22); }
+      if(e.g && 'stfX'.includes(c)){ for(let j = 1; j <= e.g; j++) plHit(c, t - j * (e.g > 1 ? .045 : .032), Math.min(.3, e.vel * .4)); }
     });
   }
   // 메트로놈 (클릭 끄기 연습: 2마디 켜고 2마디 끄기)
@@ -2063,7 +2139,10 @@ function plSelectFromEl(lineEl){
   plSelect(pg.id, gi); return true;
 }
 function plLineStep(d){ const pg = plCurPage(), n = plGroups(pg).length; if(!n) return; plSelect(pg.id, (PL.sel.li + d + n) % n); }
-function plTempoSet(v){ PL.tempo = Math.min(260, Math.max(30, Math.round(v))); PL.baseTempo = PL.tempo; plSave();
+function plTap(){ const now = performance.now(); PL.taps = PL.taps.filter(x => now - x < 2500); PL.taps.push(now);
+  if(PL.taps.length >= 3){ const d = PL.taps.slice(1).map((x, i) => x - PL.taps[i]), avg = d.reduce((a, b) => a + b, 0) / d.length; plTempoSet(60000 / avg); }
+  else toast('같은 빠르기로 3번 이상 눌러 주세요'); }
+function plTempoSet(v){ if(!isFinite(v)) return; PL.tempo = Math.min(260, Math.max(30, Math.round(v))); PL.baseTempo = PL.tempo; plSave();
   if(PL.on && PL.seq){ const now = PL.ctx.currentTime, tk = (now - PL.t0) / PL.spt; PL.spt = 60 / (PL.tempo * 96); PL.t0 = now - tk * PL.spt; }
   plUI(); }
 // ── 화면 부품
@@ -2071,21 +2150,36 @@ const PICON = {play: '<svg viewBox="0 0 24 24" width="18" height="18" fill="curr
   pause: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
   stop: '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>'};
 function plLineNo(){ const g = plGroups(plCurPage())[PL.sel.li || 0]; return g && g.items[0].n ? g.items[0].n : String((PL.sel.li || 0) + 1); }
+function plTempoHTML(t, big){
+  return `<button class="btn iconbtn" data-act="plTempo" data-f="-1" data-hold="1" aria-label="느리게 (누르고 있으면 계속)">${ICON.minus}</button>
+    <input class="ptin${big ? ' big' : ''}" type="number" inputmode="numeric" min="30" max="260" step="1" value="${t}" data-act="plTempoIn" aria-label="빠르기 숫자 (1분에 박 수)" title="숫자를 눌러 직접 쓰기 · 휠로 1씩">
+    <button class="btn iconbtn" data-act="plTempo" data-f="1" data-hold="1" aria-label="빠르게 (누르고 있으면 계속)">${ICON.plus}</button>`;
+}
+function plMixHTML(){
+  const row = (k, lab, on, v) => `<div class="mrow"><button class="btn sm pltg" data-act="plOpt" data-f="${k}" aria-pressed="${on}">${lab}</button>
+      <input type="range" class="mrange" min="0" max="100" step="1" value="${v}" data-act="plVol" data-f="${k}" aria-label="${lab} 볼륨"><span class="mval" id="plV_${k}">${v}</span></div>`;
+  return `${row('notes', '악보 소리', PL.notes, PL.volD)}${row('click', '클릭', PL.click, PL.volC)}`;
+}
 function plBarHTML(){
   const t = PL.tempo || plTempoHint(plCurPage(), PL.sel.li || 0);
   const L = [['line', '이 줄'], ['page', '이 쪽'], ['off', '끄기']];
   return `<div class="pbar" id="pbar" role="toolbar" aria-label="소리 재생">
-    <button class="btn primary pbig" data-act="plPlay" aria-label="${PL.on ? '멈춤' : '재생'}" title="재생 · 멈춤 (P)">${PL.on ? PICON.pause : PICON.play}</button>
+    <button class="btn primary pbig" data-act="plPlay" aria-label="${PL.on ? '멈춤' : '재생'}" title="재생 · 멈춤 (P)">${PL.loading ? '<span class="pspin"></span>' : PL.on ? PICON.pause : PICON.play}</button>
     <button class="btn iconbtn" data-act="plStop" aria-label="처음으로">${PICON.stop}</button>
-    <div class="ptempo"><span class="plab">빠르기</span><button class="btn iconbtn" data-act="plTempo" data-f="-2" aria-label="느리게">${ICON.minus}</button>
-      <b id="plT">${t}</b><button class="btn iconbtn" data-act="plTempo" data-f="2" aria-label="빠르게">${ICON.plus}</button>
-      <input type="range" class="prange" data-act="plTempoRange" min="30" max="240" value="${t}" aria-label="빠르기"></div>
-    <button class="btn sm pltg" data-act="plOpt" data-f="click" aria-pressed="${PL.click}">클릭</button>
-    <button class="btn sm pltg" data-act="plOpt" data-f="notes" aria-pressed="${PL.notes}">악보 소리</button>
-    <button class="btn sm pltg hide-m" data-act="plOpt" data-f="count" aria-pressed="${PL.count}">카운트 1마디</button>
+    <div class="ptempo"><span class="plab">빠르기</span>${plTempoHTML(t)}
+      <input type="range" class="prange" data-act="plTempoRange" min="30" max="260" value="${t}" aria-label="빠르기 밀대">
+      <button class="btn sm hide-m" data-act="plTap" title="박자에 맞춰 여러 번 누르면 그 빠르기로">탭</button></div>
+    <button class="btn sm pltg" data-act="plMix" aria-pressed="${PL.mix}" aria-expanded="${PL.mix}">${ICON.vol}<span class="lbl">소리</span></button>
     <span class="pfill"></span>
     <span class="plab hide-m">줄</span><button class="btn iconbtn" data-act="plLine" data-f="-1" aria-label="앞 줄">‹</button><span class="pl-li" id="plLi">${esc(plLineNo())}</span><button class="btn iconbtn" data-act="plLine" data-f="1" aria-label="다음 줄">›</button>
     <span class="plab hide-m">반복</span><div class="seg" role="group" aria-label="반복">${L.map(([k, l]) => `<button data-act="plLoop" data-f="${k}" aria-pressed="${PL.loop === k}">${l}</button>`).join('')}</div>
+    ${PL.mix ? `<div class="pmix" role="dialog" aria-label="소리 조절">
+      <div class="mh"><b>소리 조절</b><button class="btn iconbtn" data-act="plMix" aria-label="닫기">${ICON.close}</button></div>
+      ${plMixHTML()}
+      <div class="mrow"><span class="mlab">드럼 소리</span><div class="seg" role="group">${[[1, '실제 드럼'], [0, '간단한 소리']].map(([k, l]) => `<button data-act="plKit" data-f="${k}" aria-pressed="${PL.real === !!k}">${l}</button>`).join('')}</div></div>
+      <div class="mrow"><span class="mlab">시작 전</span><button class="btn sm pltg" data-act="plOpt" data-f="count" aria-pressed="${PL.count}">카운트 1마디</button></div>
+      <div class="mcred">실제 드럼 소리: AVL Drumkits · Glen MacArthur · CC BY-SA 3.0</div>
+    </div>` : ''}
   </div>`;
 }
 function plCoachHTML(){
@@ -2094,20 +2188,23 @@ function plCoachHTML(){
   const t = PL.tempo || plTempoHint(pg, PL.sel.li || 0), bt = PL.seq ? Math.round(PL.seq.bars[0].T / plBeatTicks(PL.seq.bars[0].time)) : 4;
   return `<div class="coach" id="plCoach" role="dialog" aria-label="연습 코치">
     <div class="ch"><b>연습 코치</b><button class="btn iconbtn" data-act="plCoach" aria-label="닫기">${ICON.close}</button></div>
-    <div class="cbig"><button class="btn iconbtn" data-act="plTempo" data-f="-2" aria-label="느리게">${ICON.minus}</button><span id="plT2">${t}</span><button class="btn iconbtn" data-act="plTempo" data-f="2" aria-label="빠르게">${ICON.plus}</button></div>
-    <div class="csub">1분에 ${t}박${best ? ` · 지난 최고 ${best}` : ''}</div>
+    <div class="cbig">${plTempoHTML(t, true)}</div>
+    <div class="csub">1분에 ${t}박${best ? ` · 지난 최고 ${best}` : ''} · <button class="lnk" data-act="plTap">탭으로 정하기</button></div>
     <div class="cbeats" id="plBeats">${Array.from({length: Math.min(12, Math.max(2, bt))}, () => '<i></i>').join('')}</div>
     <div class="crow"><span>줄 ${esc(plLineNo())} · 반복</span><b id="plRep">${PL.rep}번</b></div>
     <div class="crow"><span>빠르기 올리기</span><div class="seg">${[0, 2, 4, 6].map(v => `<button data-act="plStep" data-f="${v}" aria-pressed="${PL.step === v}">${v ? '+' + v : '끔'}</button>`).join('')}</div></div>
     <div class="crow"><span>몇 번마다</span><div class="seg">${[2, 4, 8].map(v => `<button data-act="plEvery" data-f="${v}" aria-pressed="${PL.every === v}">${v}번</button>`).join('')}</div></div>
     <div class="crow"><span>클릭 끄기 연습</span><button class="btn sm pltg" data-act="plGap" aria-pressed="${PL.gap}">2마디 켜고 2마디 끄기</button></div>
-    <div class="cbtns"><button class="btn primary pbig" data-act="plPlay">${PL.on ? PICON.pause : PICON.play}</button>
+    <div class="cmix">${plMixHTML()}</div>
+    <div class="cbtns"><button class="btn primary pbig" data-act="plPlay">${PL.loading ? '<span class="pspin"></span>' : PL.on ? PICON.pause : PICON.play}</button>
       <button class="btn sm" data-act="plLine" data-f="-1">‹ 앞 줄</button><button class="btn sm" data-act="plLine" data-f="1">다음 줄 ›</button>
       <button class="btn sm" data-act="plBest">오늘 기록 저장</button></div>
     <span class="csub">줄을 누르면 그 줄을 연습해요 · P 재생 · 멈춤</span>
   </div>`;
 }
 function plUI(){
+  const ae = document.activeElement, busy = el => el && ae && el.contains(ae) && ae.tagName === 'INPUT';
+  if(busy(document.getElementById('pbar')) || busy(document.getElementById('plCoach'))){ plSoft(); plMark(); return; }
   const pb = document.getElementById('pbar'); if(pb){ const n = document.createElement('div'); n.innerHTML = plBarHTML(); pb.replaceWith(n.firstElementChild); }
   const ch = document.getElementById('plCoach'), html = plCoachHTML();
   if(ch){ if(html){ const n = document.createElement('div'); n.innerHTML = html; ch.replaceWith(n.firstElementChild); } else ch.remove(); }
@@ -2115,18 +2212,40 @@ function plUI(){
   const cb = document.querySelector('[data-act="plCoach"].fvcoach'); if(cb) cb.setAttribute('aria-pressed', PL.coach);
   plMark();
 }
+// 입력 중일 때는 숫자 · 아이콘만 바꿈
+function plSoft(){ const t = PL.tempo; document.querySelectorAll('.ptin').forEach(x => { if(x !== document.activeElement) x.value = t; });
+  document.querySelectorAll('.prange').forEach(x => { if(x !== document.activeElement) x.value = t; });
+  document.querySelectorAll('[data-act="plPlay"]').forEach(b => b.innerHTML = PL.on ? PICON.pause : PICON.play);
+  const r = document.getElementById('plRep'); if(r) r.textContent = PL.rep + '번'; }
 function plBest(){ const pg = plCurPage(); if(!pg) return; const k = 'rh-best:' + pg.id + ':' + PL.sel.li, t = PL.tempo || 0;
   if(t > (+lsGet(k) || 0)){ lsSet(k, t); toast(`기록했어요 · ♩ = ${t}`); } else toast(`지난 최고 ♩ = ${lsGet(k)} 그대로예요`); plUI(); }
 const PL_ACT = {
   plPlay: () => plToggle(), plStop: () => { plStop(); PL.sel.li = 0; plUI(); },
-  plTempo: t => plTempoSet((PL.tempo || plTempoHint(plCurPage(), PL.sel.li)) + +t.dataset.f),
+  plTempo: t => { if(PL.held){ PL.held = false; return; } plTempoSet((PL.tempo || plTempoHint(plCurPage(), PL.sel.li)) + +t.dataset.f); },
   plOpt: t => { const f = t.dataset.f; PL[f] = !PL[f]; plSave(); plUI(); },
   plLoop: t => { PL.loop = t.dataset.f; plSave(); plUI(); },
   plLine: t => plLineStep(+t.dataset.f),
   plCoach: () => { PL.coach = !PL.coach; plUI(); if(PL.coach) setTimeout(plReveal, 50); },
   plStep: t => { PL.step = +t.dataset.f; plSave(); plUI(); }, plEvery: t => { PL.every = +t.dataset.f; plSave(); plUI(); },
-  plGap: () => { PL.gap = !PL.gap; plSave(); plUI(); }, plBest: () => plBest()
+  plGap: () => { PL.gap = !PL.gap; plSave(); plUI(); }, plBest: () => plBest(),
+  plTap: () => plTap(),
+  plMix: () => { PL.mix = !PL.mix; plUI(); if(PL.mix && PL.real && plCtx()) plLoadKit(); },
+  plKit: t => { PL.real = t.dataset.f === '1'; plSave(); plUI(); if(PL.real && plCtx()) plLoadKit().then(k => { if(!Object.keys(k).length) toast('드럼 소리 파일을 찾지 못했어요 (sounds 폴더를 올렸는지 확인)'); }); }
 };
+// 볼륨 밀대 · 빠르기 숫자 · 휠 · 누르고 있으면 계속
+document.addEventListener('input', e => { const t = e.target; if(t.dataset.act !== 'plVol') return;
+  const v = +t.value; if(t.dataset.f === 'notes') PL.volD = v; else PL.volC = v; plVolApply(); plSave();
+  document.querySelectorAll(`#plV_${t.dataset.f}`).forEach(x => x.textContent = v);
+  document.querySelectorAll(`[data-act="plVol"][data-f="${t.dataset.f}"]`).forEach(x => { if(x !== t) x.value = v; }); });
+document.addEventListener('change', e => { const t = e.target; if(t.dataset.act === 'plTempoIn'){ plTempoSet(+t.value); t.blur(); } });
+document.addEventListener('keydown', e => { const t = e.target; if(t && t.dataset && t.dataset.act === 'plTempoIn' && e.key === 'Enter'){ e.preventDefault(); plTempoSet(+t.value); t.blur(); } });
+document.addEventListener('wheel', e => { const t = e.target; if(!t.dataset || t.dataset.act !== 'plTempoIn') return; e.preventDefault();
+  plTempoSet((PL.tempo || +t.value) + (e.deltaY < 0 ? 1 : -1)); }, {passive: false});
+let plHoldT = 0, plHoldI = 0;
+document.addEventListener('pointerdown', e => { const b = e.target.closest && e.target.closest('[data-hold]'); if(!b) return;
+  clearTimeout(plHoldT); clearInterval(plHoldI); let n = 0;
+  plHoldT = setTimeout(() => { plHoldI = setInterval(() => { n++; plTempoSet((PL.tempo || 80) + +b.dataset.f * (n > 15 ? 5 : 1)); PL.held = true; }, 90); }, 420); });
+['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(plHoldT); clearInterval(plHoldI); }, true));
 addEventListener('scroll', () => { if(PL.on || PL.coach || PL.picked) plMark(); }, true);
 addEventListener('resize', () => setTimeout(plMark, 120));
 
