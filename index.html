@@ -236,6 +236,40 @@ a{color:var(--g)}
 .rnav .lab{min-width:84px;text-align:center;white-space:nowrap}
 .rempty{margin:auto;color:var(--muted)}
 
+/* ── 소리 재생 · 연습 코치 ───────────────────── */
+.pbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 16px calc(10px + var(--sab));background:var(--paper);border-top:1px solid var(--line)}
+.pbar .pbig,.coach .pbig{width:46px;height:46px;padding:0;border-radius:50%;display:grid;place-items:center}
+.pbar .plab{font-size:12px;color:var(--muted)}
+.ptempo{display:flex;align-items:center;gap:4px}
+.ptempo b{min-width:38px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums;color:var(--g)}
+.ptempo .iconbtn,.pbar > .iconbtn{width:36px;height:36px;font-size:18px}
+.prange{width:120px;accent-color:var(--g)}
+.pltg[aria-pressed="true"]{background:var(--g-soft);border-color:var(--g);color:var(--g)}
+.pltg[aria-pressed="false"]{color:var(--muted)}
+.pltg[aria-pressed="true"]::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--g);margin-right:6px;display:inline-block}
+.coach .cbig .iconbtn{width:44px;height:44px;font-size:22px}
+.pfill{flex:1}
+.pl-li{min-width:22px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600}
+.pbar .seg button{padding:6px 12px;font-size:13px}
+.plhl{position:fixed;pointer-events:none;border-radius:8px;background:rgba(232,163,23,.13);box-shadow:0 0 0 2px rgba(232,163,23,.75);display:none;transition:top .15s,left .15s,width .15s,height .15s}
+.plcur{position:fixed;pointer-events:none;width:3px;border-radius:2px;background:#E8590C;box-shadow:0 0 6px rgba(232,89,12,.6);display:none}
+.fvcoach[aria-pressed="true"]{background:var(--g);color:var(--on-g);border-color:var(--g)}
+.coach{position:absolute;right:16px;bottom:calc(16px + var(--sab));z-index:80;width:300px;max-width:calc(100% - 32px);background:var(--paper);color:var(--ink);border:1px solid var(--line-2);border-radius:16px;box-shadow:0 12px 36px rgba(0,0,0,.25);padding:12px 14px 14px;display:flex;flex-direction:column;gap:9px}
+.coach .ch{display:flex;align-items:center;justify-content:space-between}
+.coach .ch .iconbtn{width:34px;height:34px}
+.coach .cbig{display:flex;align-items:center;justify-content:center;gap:14px}
+.coach .cbig span{font-family:var(--f-title);font-size:46px;line-height:1;color:var(--g);min-width:96px;text-align:center;font-variant-numeric:tabular-nums}
+.coach .csub{font-size:12px;color:var(--muted);text-align:center}
+.cbeats{display:flex;justify-content:center;gap:8px}
+.cbeats i{width:14px;height:14px;border-radius:50%;background:var(--line-2);transition:background .05s}
+.cbeats i:first-child{width:16px;height:16px}
+.cbeats i.on{background:#E8590C}
+.coach .crow{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+.coach .crow .seg button{padding:5px 10px;font-size:12.5px}
+.coach .cbtns{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
+.paper[data-fvi] .rh-n{cursor:pointer}
+@media (max-width:720px){ .coach .cbig span{font-size:38px} .coach{gap:7px;padding:10px 12px 12px} .pbar .hide-m{display:none} .prange{width:80px} .pbar{gap:6px;padding:8px 10px calc(8px + var(--sab))} .coach{left:16px;right:16px;width:auto} }
+
 /* ── 크게 보기 (전체 화면 악보) ───────────────────── */
 .pages .paper{cursor:zoom-in}
 .fv{position:fixed;inset:0;z-index:60;background:#E9ECE8;display:flex;flex-direction:column}
@@ -499,7 +533,7 @@ const firebaseConfig = {
 const OWNER_EMAIL = "artist4rhythm@gmail.com";
 
 // ③ 앱 버전 — 고쳐 올릴 때마다 여기와 version.json을 같이 올립니다
-const APP_VERSION = '2.5', APP_DATE = '2026.10.20';
+const APP_VERSION = '2.6', APP_DATE = '2026.10.21';
 
 // ══════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
@@ -515,6 +549,7 @@ const ymd = d => `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.$
 function errText(e){ const c = (e && e.code) || ''; if(c.includes('permission')) return '권한이 없어요'; if(c.includes('unavailable') || c.includes('network')) return '인터넷 연결을 확인해 주세요'; return '문제가 생겼어요' + (c ? ' · ' + c : ''); }
 
 const ICON = {
+  metro: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l4 18H5z"/><path d="M12 15l5-8"/><path d="M8 15h8"/></svg>',
   voices: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h18M3 11h18M3 15h18"/><path d="M8 4v7M16 18v-7"/><circle cx="7" cy="11" r="1.6" fill="currentColor"/><circle cx="15" cy="15" r="1.6" fill="currentColor"/></svg>',
   score:'<svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
   people:'<svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2 .7 3.2 2.6 3.7 5.5"/></svg>',
@@ -877,6 +912,7 @@ function rDrawLine(item, W, sp, opt){
   const restUp = one ? yOf(4) : (F.hasDown ? yOf(7.2) : yOf(4)), restDown = yOf(-.2);
   const pre = (opt.showTime ? 5.6 : 2.6)*sp + (item.repeat ? 1.6*sp : 0), post = .6*sp;
   const stretch = (W - pre - post) / (lay.units * sp);   // 남는 폭은 고르게 늘림
+  const TM = [];   // 재생 커서용: 마디마다 {T 길이, p [박 칸, x], e 끝 x}
   const barX = []; { let x = pre; lay.bars.forEach(b => { barX.push(x); x += (b.units + b.extraL + b.extraR + R_PAD_L + R_PAD_R) * sp * stretch; }); barX.push(x); }
   const serif = `'Noto Serif KR','Noto Serif CJK KR',Georgia,'Times New Roman',serif`;
   let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">`;
@@ -1054,6 +1090,7 @@ function rDrawLine(item, W, sp, opt){
       else s += `<text x="${lx}" y="${labY}" style="font:400 ${1.45*sp}px var(--f-body)" fill="#123b2a">(${rEsc(L.label)})</text>`; }
     if(L.volta) s += `<path d="M${x0+.3*sp},${volY+1.1*sp}V${volY-.9*sp}H${x1-.8*sp}" fill="none" stroke="${k}" stroke-width="${.12*sp}"/><text x="${x0+.8*sp}" y="${volY+.5*sp}" style="font:700 ${1.3*sp}px var(--f-body)" fill="${k}">${rEsc(L.volta)}.</text>`;
     const inner0 = x0 + padL, inner1 = x1 - (R_PAD_R + L.extraR)*sp*stretch;
+    if(L.sim || L.multi || L.empty) TM.push({T: rBarTicks(L.curTime) * (L.multi || 1), p: [[0, +inner0.toFixed(1)]], e: +inner1.toFixed(1)});
     if(L.sim){ const cx = (inner0 + inner1) / 2, mY = yOf(4);
       s += `<path d="M${cx-1.25*sp},${mY+1.8*sp}L${cx+.55*sp},${mY-1.8*sp}L${cx+1.25*sp},${mY-1.8*sp}L${cx-.55*sp},${mY+1.8*sp}Z" fill="${k}"/>`;
       s += `<circle cx="${cx-.95*sp}" cy="${mY-1.1*sp}" r="${.3*sp}" fill="${k}"/><circle cx="${cx+.95*sp}" cy="${mY+1.1*sp}" r="${.3*sp}" fill="${k}"/>`; }
@@ -1063,6 +1100,7 @@ function rDrawLine(item, W, sp, opt){
     else if(!L.empty){
       const pos = L.pos;
       const X = t => inner0 + (pos.get(+t.toFixed(3)) ?? 0) * sp * stretch;
+      TM.push({T: rBarTicks(L.curTime), p: [...pos.keys()].sort((a, c) => a - c).map(o => [o, +(X(o)).toFixed(1)]), e: +inner1.toFixed(1)});
       s += voice(L.ev, 1, X, time, L.grp);
       if(L.bev.length) s += voice(L.bev, -1, X, time, L.grp);
       L.ev.forEach(e => { s += marks(e, e.x); });
@@ -1090,6 +1128,7 @@ function rDrawLine(item, W, sp, opt){
   else if(opt.final) s += `<line x1="${ex-.9*sp}" x2="${ex-.9*sp}" y1="${yT}" y2="${yB}" stroke="${k}" stroke-width="1"/><rect x="${ex-.45*sp}" y="${yT}" width="${.45*sp}" height="${yB-yT}" fill="${k}"/>`;
   else if(item.dbl) s += `<line x1="${ex-.6*sp}" x2="${ex-.6*sp}" y1="${yT}" y2="${yB}" stroke="${k}" stroke-width="1"/><line x1="${ex}" x2="${ex}" y1="${yT}" y2="${yB}" stroke="${k}" stroke-width="1"/>`;
   else s += `<line x1="${ex}" x2="${ex}" y1="${yT}" y2="${yB}" stroke="${k}" stroke-width="1"/>`;
+  s = s.replace('<svg ', `<svg data-tm='${JSON.stringify(TM)}' `);
   return {svg: s + '</svg>', H, endTime: lay.endTime};
 }
 
@@ -1594,7 +1633,7 @@ function viewRead(){
           <span class="lab" id="rLab"></span>
           <button class="nb" data-act="pgNext" aria-label="다음 쪽">${ICON.next}</button></div>
       </div>
-    </div></div>`;
+    </div>${plBarHTML()}</div>`;
 }
 function fitReader(){
   const box = document.getElementById('rpages'); if(!box || !S.reading) return;
@@ -1615,6 +1654,7 @@ function fitReader(){
   if(nx) nx.disabled = vis[vis.length - 1] >= n - 1;
   vis.forEach(i => markOpened(pages[i].id));
   if(wasTwo !== S.two && tocOpen()) setTimeout(render);   // 목차의 현재 쪽 표시를 맞춤
+  setTimeout(plMark, 60);
 }
 function turn(dir){
   if(!S.reading) return;
@@ -1648,7 +1688,7 @@ function fvClose(){
   FV.on = false; const el = fvEl(); el.classList.add('hide'); el.innerHTML = ''; document.body.style.overflow = '';
   if(FV.io){ FV.io.disconnect(); FV.io = null; }
   if(FV.myFull && document.fullscreenElement) document.exitFullscreen().catch(() => {});
-  FV.myFull = false;
+  FV.myFull = false; plCursor(null);
   const n = fvPages().length; if(n){ S.pi = Math.min(FV.i, n - 1); render(); }
 }
 function fvFullscreen(auto){
@@ -1668,6 +1708,7 @@ function fvBar(n){
       <button class="btn iconbtn" data-act="fvZoom" data-f="1" aria-label="확대" title="확대 (+)">${ICON.plus}</button></div>
     <div class="grp"><button class="btn iconbtn" data-act="fvPrev" aria-label="앞 쪽">${ICON.prev}</button><span class="pl" id="fvLab">${lab}</span><button class="btn iconbtn" data-act="fvNext" aria-label="다음 쪽">${ICON.next}</button></div>
     <button class="btn" data-act="voiceCycle" title="손 · 발 성부 보기 바꾸기 (V)">${ICON.voices}<span class="lbl">${esc(voiceLabel())}</span></button>
+    <button class="btn fvcoach" data-act="plCoach" aria-pressed="${PL.coach}" title="연습 코치 (C)">${ICON.metro}<span class="lbl">연습 코치</span></button>
     <button class="btn" data-act="fvFull" title="전체 화면 (F)">${ICON.expand}<span class="lbl">전체 화면</span></button>
   </div>
   <div class="fvstage" id="fvStage"><div class="fvin${FV.mode === 'scroll' ? ' scroll' : ''}" id="fvIn"></div></div>
@@ -1702,6 +1743,8 @@ function fvBuild(){
     vis.forEach(i => markOpened(pages[i].id));
   }
   fvBindStage();
+  if(PL.coach) fvEl().insertAdjacentHTML('beforeend', plCoachHTML());
+  setTimeout(plMark, 60);
 }
 function fvTrack(){
   const st = document.getElementById('fvStage'), box = document.getElementById('fvIn'); if(!st || !box) return;
@@ -1758,7 +1801,7 @@ function fvBindStage(){
     swipe = null;
     if(tap && Date.now() - tap.t < 300){ const now = Date.now();
       if(now - lastTap < 320){ lastTap = 0; fvSetZoom(FV.z > 1.05 ? 1 : 2, t.clientX, t.clientY); }
-      else { lastTap = now; setTimeout(() => { if(lastTap === now){ fvEl().classList.toggle('nobar'); setTimeout(() => { FV.base = fvBaseWidth(); fvApplyZoom(); }, 200); } }, 330); }
+      else { lastTap = now; setTimeout(() => { if(lastTap === now && Date.now() - (PL.selAt || 0) > 700){ fvEl().classList.toggle('nobar'); setTimeout(() => { FV.base = fvBaseWidth(); fvApplyZoom(); }, 200); } }, 330); }
     }
     tap = null;
   }, {passive: true});
@@ -1770,6 +1813,7 @@ document.addEventListener('keydown', e => {
   if(!FV.on){
     if((e.key === 'f' || e.key === 'F') && S.reading && S.view === 'scores' && !(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'))){ e.preventDefault(); fvOpen(S.pi); }
     if((e.key === 'v' || e.key === 'V') && S.reading && S.view === 'scores' && !(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'))){ e.preventDefault(); setVoices(voiceNext()); }
+    if((e.key === 'p' || e.key === 'P') && S.reading && S.view === 'scores' && !(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'))){ e.preventDefault(); plToggle(); }
     return;
   }
   e.stopImmediatePropagation();
@@ -1783,12 +1827,308 @@ document.addEventListener('keydown', e => {
   else if(k === '1'){ fvSetMode('one'); } else if(k === '2'){ fvSetMode('two'); } else if(k === '3'){ fvSetMode('scroll'); }
   else if(k === 'f' || k === 'F'){ fvFullscreen(); }
   else if(k === 'v' || k === 'V'){ setVoices(voiceNext()); }
+  else if(k === 'p' || k === 'P'){ e.preventDefault(); plToggle(); }
+  else if(k === 'c' || k === 'C'){ PL.coach = !PL.coach; plUI(); }
+  else if(k === 'ArrowUp' && (PL.on || PL.coach)){ e.preventDefault(); plLineStep(-1); }
+  else if(k === 'ArrowDown' && (PL.on || PL.coach)){ e.preventDefault(); plLineStep(1); }
 }, true);
-document.addEventListener('click', e => { const p = e.target.closest && e.target.closest('#rpages .paper[data-fvi]'); if(p) fvOpen(+p.dataset.fvi); });
+let plDown = null;
+addEventListener('pointerdown', e => { plDown = {x: e.clientX, y: e.clientY}; }, true);
+document.addEventListener('click', e => {
+  const ln = e.target.closest && e.target.closest('.paper[data-fvi] .rh-line');
+  const moved = plDown && Math.hypot(e.clientX - plDown.x, e.clientY - plDown.y) > 6;
+  // 줄 고르기: 읽기 화면은 줄 번호를 누르거나 재생 중일 때, 크게 보기는 재생 중이거나 연습 코치가 열려 있을 때
+  if(ln && !moved && (FV.on ? (PL.on || PL.coach) : (PL.on || e.target.closest('.rh-n')))){ if(plSelectFromEl(ln)){ PL.selAt = Date.now(); e.stopPropagation(); return; } }
+  const p = e.target.closest && e.target.closest('#rpages .paper[data-fvi]'); if(p) fvOpen(+p.dataset.fvi); });
 addEventListener('mousemove', e => { const d = FV.drag; if(!d) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if(Math.abs(dx) + Math.abs(dy) > 4) d.st.classList.add('drag');
   d.st.scrollLeft = d.l - dx; d.st.scrollTop = d.t - dy; });
 addEventListener('mouseup', () => { if(FV.drag){ FV.drag.st.classList.remove('drag'); FV.drag = null; } });
 addEventListener('resize', () => { if(!FV.on) return; clearTimeout(FV.rt); FV.rt = setTimeout(() => { FV.base = fvBaseWidth(); fvApplyZoom(); }, 80); });
+
+// ── 소리 재생 · 메트로놈 · 연습 코치 (v2.6) ─────────────────────────
+// 앱이 직접 만드는 드럼 소리(WebAudio). 읽기 화면 = 아래 플레이어 바, 크게 보기 = 연습 코치
+const PL = {
+  ctx: null, out: null, noise: null, on: false, raf: 0, timer: 0,
+  tempo: +lsGet('rh-tempo') || 0, click: lsGet('rh-click') !== '0', notes: lsGet('rh-notes') !== '0', count: lsGet('rh-count') === '1',
+  loop: lsGet('rh-loop') || 'line', sel: {pid: '', li: 0}, seq: null, t0: 0, next: 0, rep: 0, coach: false,
+  every: +(lsGet('rh-every') || 4), step: +(lsGet('rh-step') || 0), gap: lsGet('rh-gap') === '1', baseTempo: 0
+};
+function plSave(){ lsSet('rh-tempo', PL.tempo); lsSet('rh-click', PL.click ? '1' : '0'); lsSet('rh-notes', PL.notes ? '1' : '0'); lsSet('rh-count', PL.count ? '1' : '0');
+  lsSet('rh-loop', PL.loop); lsSet('rh-every', PL.every); lsSet('rh-step', PL.step); lsSet('rh-gap', PL.gap ? '1' : '0'); }
+// 지금 보고 있는 쪽
+function plPages(){ return FV.on ? fvPages() : (S.reading ? bookPages(S.reading) : []); }
+function plCurPage(){
+  const pages = plPages(); if(!pages.length) return null;
+  const sel = pages.find(p => p.id === PL.sel.pid);
+  if(sel && (FV.on ? (FV.mode === 'scroll' || fvVis(pages.length).includes(pages.indexOf(sel))) : visIdx(pages.length).includes(pages.indexOf(sel)))) return sel;
+  const i = FV.on ? FV.i : visIdx(pages.length)[0];
+  if(pages[i] && PL.sel.pid !== pages[i].id){ PL.sel = {pid: pages[i].id, li: 0}; }
+  return pages[i] || null;
+}
+// 쪽의 줄 묶음 (듀엣 a · b 는 한 묶음)
+function plGroups(pg){
+  if(!pg || pg.kind !== 'rhythm') return [];
+  const gs = []; let li = 0, t = pg.time || '4/4';
+  pg.items.forEach((it, i) => {
+    if(it.h){ if(it.time) t = it.time; return; }
+    const time = it.time || t; let tt = time;
+    it.bars.forEach(b => { const m = /(?:^|\s)T(\d{1,2}\/\d{1,2})(?=\s|$)/.exec(b); if(m) tt = m[1]; });
+    if(it.sys === 'b' && gs.length && gs[gs.length - 1].a){ gs[gs.length - 1].items.push(it); gs[gs.length - 1].a = false; li++; t = tt; return; }
+    gs.push({items: [it], start: time, dom: li, a: it.sys === 'a'}); li++; t = tt;
+  });
+  return gs;
+}
+function plTempoHint(pg, gi){
+  const gs = plGroups(pg);
+  for(let k = gi; k >= 0; k--){ const tx = gs[k] && gs[k].items[0].tempo; if(!tx) continue;
+    const m = /^([qeh])(\.?)\s*=\s*(\d+)/.exec(String(tx)); if(!m) continue;
+    let v = +m[3]; if(m[1] === 'e') v /= 2; if(m[1] === 'h') v *= 2; if(m[2]) v *= 1.5; return Math.round(v); }
+  return 80;
+}
+// 한 묶음 → 소리 목록 {t 칸, ins, vel, g 꾸밈음, roll, d 길이} · 마디 목록
+function plBuild(g, pg){
+  const ev = [], bars = []; let time = g.start, off = 0;
+  const nb = Math.max(...g.items.map(it => it.bars.length)), last = new Map(), tie = new Map();
+  for(let bi = 0; bi < nb; bi++){
+    let T = 0;
+    g.items.forEach((it, k) => {
+      const b = it.bars[bi]; if(b == null) return;
+      let P = rParseBar(b, [], ''); if(k === 0 && P.time) time = P.time;
+      if(P.sim && last.has(it)) P = last.get(it); else if(!P.sim && !P.empty && !P.multi) last.set(it, P);
+      const barT = rBarTicks(time) * (P.multi || 1); T = Math.max(T, barT);
+      const add = (list, def, key) => list.forEach(e => {
+        if(e.rest){ tie.set(key, false); return; }
+        const held = tie.get(key); tie.set(key, !!e.tie); if(held) return;    // 붙임줄로 이어진 음은 다시 치지 않음
+        const vel = e.acc ? 1 : e.ghost ? .28 : .7;
+        ev.push({t: off + e.onset, ins: e.inst || [def], vel, g: e.grace || 0, roll: e.roll || 0, d: e.ticks}); });
+      if(!P.sim && !P.empty && !P.multi) add(P.ev, 's', it);
+      if(it.bass && it.bass[bi]){ const Q = rParseBar(it.bass[bi], [], ''); if(!Q.sim && !Q.empty && !Q.multi) add(Q.ev, 'k', 'b' + k); }
+      else if(pg && pg.bass === 'beat' && k === 0 && !P.multi && !P.empty){ for(let q = 0; q < barT; q += 96) ev.push({t: off + q, ins: ['p'], vel: .5, g: 0, roll: 0, d: 96}); }
+    });
+    bars.push({t0: off, T, time}); off += T;
+  }
+  ev.sort((a, b) => a.t - b.t);
+  return {ev, bars, total: off};
+}
+// ── 소리 만들기
+function plCtx(){
+  if(PL.ctx) return PL.ctx;
+  const C = window.AudioContext || window.webkitAudioContext; if(!C) return null;
+  const ctx = new C(), comp = ctx.createDynamicsCompressor(), out = ctx.createGain();
+  out.gain.value = .8; out.connect(comp); comp.connect(ctx.destination);
+  const nb = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), d = nb.getChannelData(0);
+  for(let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  PL.ctx = ctx; PL.out = out; PL.noise = nb; return ctx;
+}
+function plEnv(g, t, v, a, dec){ g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(v, .0002), t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + dec); }
+function plNoise(t, v, type, f, q, dec){
+  const c = PL.ctx, s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();
+  s.buffer = PL.noise; fl.type = type; fl.frequency.value = f; fl.Q.value = q || .7;
+  s.connect(fl); fl.connect(g); g.connect(PL.out); plEnv(g, t, v, .002, dec); s.start(t, Math.random() * .5); s.stop(t + dec + .05);
+}
+function plTone(t, v, type, f0, f1, dec){
+  const c = PL.ctx, o = c.createOscillator(), g = c.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t); if(f1) o.frequency.exponentialRampToValueAtTime(f1, t + dec * .6);
+  o.connect(g); g.connect(PL.out); plEnv(g, t, v, .002, dec); o.start(t); o.stop(t + dec + .05);
+}
+function plHit(c, t, v){
+  switch(c){
+    case 'k': plTone(t, 1.0 * v, 'sine', 150, 45, .32); plNoise(t, .08 * v, 'lowpass', 1200, .7, .02); break;
+    case 's': plNoise(t, .7 * v, 'bandpass', 1900, .8, .17); plTone(t, .35 * v, 'triangle', 200, 160, .09); break;
+    case 'x': plNoise(t, .32 * v, 'highpass', 7600, .7, .05); break;
+    case 'o': plNoise(t, .3 * v, 'highpass', 6800, .7, .36); break;
+    case 'p': plNoise(t, .22 * v, 'highpass', 5600, .9, .035); break;
+    case 'y': plNoise(t, .16 * v, 'bandpass', 8200, 2, .55); plTone(t, .05 * v, 'square', 3200, 0, .3); break;
+    case 'c': plNoise(t, .45 * v, 'highpass', 3800, .6, 1.3); break;
+    case 't': plTone(t, .8 * v, 'sine', 240, 160, .26); plNoise(t, .06 * v, 'bandpass', 1500, 1, .04); break;
+    case 'f': plTone(t, .9 * v, 'sine', 130, 85, .38); plNoise(t, .06 * v, 'bandpass', 900, 1, .05); break;
+    case 'X': plNoise(t, .45 * v, 'bandpass', 3200, 4, .04); plTone(t, .25 * v, 'square', 1250, 0, .02); break;
+  }
+}
+function plClick(t, strong){ plTone(t, strong ? .5 : .32, 'sine', strong ? 2200 : 1500, 0, .035); }
+// ── 재생
+function plBeatTicks(time){ const [n, d] = R_TIME[time] || [4, 4]; return (d === 8 && n % 3 === 0) ? 144 : 384 / d; }
+function plStart(){
+  const ctx = plCtx(); if(!ctx) { toast('이 브라우저는 소리 재생을 지원하지 않아요'); return; }
+  if(ctx.state === 'suspended') ctx.resume();
+  const pg = plCurPage(); const gs = plGroups(pg); if(!gs.length){ toast('이 쪽에는 재생할 리듬 줄이 없어요'); return; }
+  PL.sel.li = Math.min(PL.sel.li, gs.length - 1);
+  if(!PL.tempo) PL.tempo = plTempoHint(pg, PL.sel.li);
+  PL.baseTempo = PL.tempo; PL.rep = 0; PL.on = true; PL.picked = true;
+  plQueue(ctx.currentTime + .12, PL.count);
+  clearInterval(PL.timer); PL.timer = setInterval(plTick, 25);
+  cancelAnimationFrame(PL.raf); PL.raf = requestAnimationFrame(plDraw);
+  plUI(); plReveal();
+}
+function plQueue(at, countIn){
+  const pg = plCurPage(), gs = plGroups(pg), g = gs[PL.sel.li]; if(!g){ plStop(); return; }
+  PL.seq = plBuild(g, pg); PL.seq.pid = pg.id; PL.seq.li = PL.sel.li;
+  const spt = 60 / (PL.tempo * 96);
+  PL.spt = spt; PL.next = 0; PL.clickNext = 0;
+  PL.seq.clicks = []; PL.seq.bars.forEach((b, i) => { const bt = plBeatTicks(b.time); for(let q = 0; q < b.T - .5; q += bt) PL.seq.clicks.push({t: b.t0 + q, strong: q === 0, bar: i}); });
+  if(countIn){ const bt = plBeatTicks(PL.seq.bars[0].time), n = Math.round(PL.seq.bars[0].T / bt);
+    for(let i = 0; i < n; i++) plClick(at + i * bt * spt, i === 0); at += PL.seq.bars[0].T * spt; }
+  PL.t0 = at;
+}
+function plTick(){
+  if(!PL.on || !PL.seq) return;
+  if(!FV.on && !document.getElementById('pbar')){ plStop(); return; }   // 책을 닫으면 멈춤
+  const ctx = PL.ctx, now = ctx.currentTime, ahead = now + .15, spt = PL.spt, S0 = PL.seq;
+  while(PL.next < S0.ev.length && PL.t0 + S0.ev[PL.next].t * spt < ahead){
+    const e = S0.ev[PL.next++], t = PL.t0 + e.t * spt;
+    if(!PL.notes) continue;
+    e.ins.forEach(c => {
+      if(e.roll){ const step = {1: 48, 2: 24, 3: 12}[e.roll] || 24, n = Math.max(1, Math.round(e.d / step));
+        for(let i = 0; i < n; i++) plHit(c, t + i * step * spt, e.vel * (i ? .75 : 1)); }
+      else plHit(c, t, e.vel);
+      if(e.g && 'stfX'.includes(c)){ for(let j = 1; j <= e.g; j++) plHit(c, t - j * .028, .22); }
+    });
+  }
+  // 메트로놈 (클릭 끄기 연습: 2마디 켜고 2마디 끄기)
+  const C = S0.clicks;
+  while(PL.clickNext < C.length && PL.t0 + C[PL.clickNext].t * spt < ahead){
+    const c = C[PL.clickNext++], t = PL.t0 + c.t * spt;
+    const on = !(PL.coach && PL.gap) || Math.floor((PL.rep * S0.bars.length + c.bar) / 2) % 2 === 0;
+    if(PL.click && on && t > now - .01) plClick(t, c.strong);
+  }
+  // 줄 끝 → 다음 (같은 줄 · 다음 줄)
+  if(PL.next >= S0.ev.length && PL.clickNext >= C.length && now > PL.t0 + S0.total * spt - .12) plAdvance(PL.t0 + S0.total * spt);
+}
+function plAdvance(at){
+  const pg = plCurPage(), gs = plGroups(pg);
+  if(PL.loop === 'line'){ PL.rep++;
+    if(PL.coach && PL.step && PL.rep % PL.every === 0){ PL.tempo = Math.min(260, PL.tempo + PL.step); }
+  } else if(PL.loop === 'page'){ PL.sel.li = (PL.sel.li + 1) % gs.length; if(PL.sel.li === 0) PL.rep++; }
+  else { if(PL.sel.li + 1 >= gs.length){ plStop(); return; } PL.sel.li++; }
+  plQueue(Math.max(at, PL.ctx.currentTime + .03), false); plUI(); plReveal();
+}
+function plStop(){ PL.on = false; clearInterval(PL.timer); cancelAnimationFrame(PL.raf); PL.seq = null; plCursor(null); plUI(); }
+function plToggle(){ PL.on ? plStop() : plStart(); }
+// ── 화면: 지금 줄 표시 · 커서
+function plLineEls(){
+  const pg = plCurPage(); if(!pg) return [];
+  const root = FV.on ? document.getElementById('fvIn') : document.getElementById('rpages'); if(!root) return [];
+  const pages = plPages(), i = pages.indexOf(pg);
+  const paper = root.querySelector(`.paper[data-fvi="${i}"]`); if(!paper) return [];
+  const lines = [...paper.querySelectorAll('.rh-line')], g = plGroups(pg)[PL.sel.li]; if(!g) return [];
+  return lines.slice(g.dom, g.dom + g.items.length);
+}
+function plBox(id, cls){ let el = document.getElementById(id); if(!el){ el = document.createElement('div'); el.id = id; el.className = cls; document.body.appendChild(el); } return el; }
+function plMark(){
+  const els = plLineEls(), hl = plBox('plHL', 'plhl');
+  if(!els.length || !(PL.on || PL.coach || PL.picked)){ hl.style.display = 'none'; return; }
+  const rs = els.map(e => e.getBoundingClientRect()), L = Math.min(...rs.map(r => r.left)), T = Math.min(...rs.map(r => r.top)), R = Math.max(...rs.map(r => r.right)), B = Math.max(...rs.map(r => r.bottom));
+  const V = plView();
+  if(R - L < 4 || B < V.top + 8 || T > V.bottom - 8){ hl.style.display = 'none'; return; }
+  const t0 = Math.max(T - 2, V.top), b0 = Math.min(B + 2, V.bottom);
+  Object.assign(hl.style, {display: 'block', left: L - 4 + 'px', top: t0 + 'px', width: R - L + 8 + 'px', height: b0 - t0 + 'px', zIndex: FV.on ? 75 : 30});
+}
+function plView(){ const el = FV.on ? document.getElementById('fvStage') : document.getElementById('rpages'); return el ? el.getBoundingClientRect() : {top: 0, bottom: innerHeight}; }
+// 크게 보기에서 고른 줄이 화면 밖이면 보이게 옮김
+function plReveal(){ if(!FV.on) return; const els = plLineEls(), V = plView(); if(!els.length) return;
+  const r = els[0].getBoundingClientRect(), r2 = els[els.length - 1].getBoundingClientRect();
+  if(r.top < V.top + 4 || r2.bottom > V.bottom - (PL.coach && innerWidth < 720 ? 420 : 4)){ const st = document.getElementById('fvStage'); if(st) st.scrollBy({top: r.top - V.top - 40, behavior: 'smooth'}); } }
+function plCursor(x){ const c = plBox('plCur', 'plcur'); if(x == null){ c.style.display = 'none'; return; } Object.assign(c.style, x); }
+function plDraw(){
+  if(!PL.on || !PL.seq){ plCursor(null); return; }
+  PL.raf = requestAnimationFrame(plDraw);
+  const now = PL.ctx.currentTime, tk = (now - PL.t0) / PL.spt;
+  const els = plLineEls(); if(!els.length || tk < 0){ plCursor(null); plBeat(-1); return; }
+  const svg = els[0].querySelector('svg[data-tm]'); if(!svg){ plCursor(null); return; }
+  let TM; try{ TM = JSON.parse(svg.getAttribute('data-tm')); }catch(_){ return; }
+  const r = svg.getBoundingClientRect(), vw = svg.viewBox.baseVal.width || r.width, k = r.width / vw;
+  let acc = 0, x = null, beatIdx = -1;
+  for(let bi = 0; bi < TM.length; bi++){ const b = TM[bi];
+    if(tk < acc + b.T || bi === TM.length - 1){ const lt = Math.min(Math.max(tk - acc, 0), b.T); const p = b.p;
+      let j = 0; while(j + 1 < p.length && p[j + 1][0] <= lt) j++;
+      const [o0, x0] = p[j], [o1, x1] = j + 1 < p.length ? p[j + 1] : [b.T, b.e];
+      x = x0 + (x1 - x0) * Math.min(1, (lt - o0) / Math.max(1, o1 - o0));
+      const bar = PL.seq.bars[bi]; if(bar) beatIdx = Math.floor(lt / plBeatTicks(bar.time));
+      break; }
+    acc += b.T; }
+  const rs = els.map(e => e.getBoundingClientRect()), V = plView(), T = Math.max(V.top, Math.min(...rs.map(q => q.top))), B = Math.min(V.bottom, Math.max(...rs.map(q => q.bottom)));
+  if(B - T < 12){ plCursor(null); return; }
+  plCursor({display: 'block', left: r.left + x * k - 1.5 + 'px', top: T + 4 + 'px', height: B - T - 8 + 'px', zIndex: FV.on ? 76 : 31});
+  plBeat(beatIdx);
+}
+function plBeat(i){ const d = document.getElementById('plBeats'); if(!d) return; [...d.children].forEach((c, k) => c.classList.toggle('on', k === i)); }
+// 줄 고르기
+function plSelect(pid, li){ PL.sel = {pid, li}; PL.picked = true; if(PL.on){ PL.tempo = PL.tempo || 80; plQueue(PL.ctx.currentTime + .08, false); } plUI(); plReveal(); }
+function plSelectFromEl(lineEl){
+  const paper = lineEl.closest('.paper[data-fvi]'); if(!paper) return false;
+  const pages = plPages(), pg = pages[+paper.dataset.fvi]; if(!pg) return false;
+  const idx = [...paper.querySelectorAll('.rh-line')].indexOf(lineEl); const gs = plGroups(pg);
+  const gi = gs.findIndex(g => idx >= g.dom && idx < g.dom + g.items.length); if(gi < 0) return false;
+  if(!PL.on) PL.tempo = PL.tempo || plTempoHint(pg, gi);
+  plSelect(pg.id, gi); return true;
+}
+function plLineStep(d){ const pg = plCurPage(), n = plGroups(pg).length; if(!n) return; plSelect(pg.id, (PL.sel.li + d + n) % n); }
+function plTempoSet(v){ PL.tempo = Math.min(260, Math.max(30, Math.round(v))); PL.baseTempo = PL.tempo; plSave();
+  if(PL.on && PL.seq){ const now = PL.ctx.currentTime, tk = (now - PL.t0) / PL.spt; PL.spt = 60 / (PL.tempo * 96); PL.t0 = now - tk * PL.spt; }
+  plUI(); }
+// ── 화면 부품
+const PICON = {play: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>'};
+function plLineNo(){ const g = plGroups(plCurPage())[PL.sel.li || 0]; return g && g.items[0].n ? g.items[0].n : String((PL.sel.li || 0) + 1); }
+function plBarHTML(){
+  const t = PL.tempo || plTempoHint(plCurPage(), PL.sel.li || 0);
+  const L = [['line', '이 줄'], ['page', '이 쪽'], ['off', '끄기']];
+  return `<div class="pbar" id="pbar" role="toolbar" aria-label="소리 재생">
+    <button class="btn primary pbig" data-act="plPlay" aria-label="${PL.on ? '멈춤' : '재생'}" title="재생 · 멈춤 (P)">${PL.on ? PICON.pause : PICON.play}</button>
+    <button class="btn iconbtn" data-act="plStop" aria-label="처음으로">${PICON.stop}</button>
+    <div class="ptempo"><span class="plab">빠르기</span><button class="btn iconbtn" data-act="plTempo" data-f="-2" aria-label="느리게">${ICON.minus}</button>
+      <b id="plT">${t}</b><button class="btn iconbtn" data-act="plTempo" data-f="2" aria-label="빠르게">${ICON.plus}</button>
+      <input type="range" class="prange" data-act="plTempoRange" min="30" max="240" value="${t}" aria-label="빠르기"></div>
+    <button class="btn sm pltg" data-act="plOpt" data-f="click" aria-pressed="${PL.click}">클릭</button>
+    <button class="btn sm pltg" data-act="plOpt" data-f="notes" aria-pressed="${PL.notes}">악보 소리</button>
+    <button class="btn sm pltg hide-m" data-act="plOpt" data-f="count" aria-pressed="${PL.count}">카운트 1마디</button>
+    <span class="pfill"></span>
+    <span class="plab hide-m">줄</span><button class="btn iconbtn" data-act="plLine" data-f="-1" aria-label="앞 줄">‹</button><span class="pl-li" id="plLi">${esc(plLineNo())}</span><button class="btn iconbtn" data-act="plLine" data-f="1" aria-label="다음 줄">›</button>
+    <span class="plab hide-m">반복</span><div class="seg" role="group" aria-label="반복">${L.map(([k, l]) => `<button data-act="plLoop" data-f="${k}" aria-pressed="${PL.loop === k}">${l}</button>`).join('')}</div>
+  </div>`;
+}
+function plCoachHTML(){
+  if(!PL.coach) return '';
+  const pg = plCurPage(), best = +lsGet('rh-best:' + (pg ? pg.id : '') + ':' + PL.sel.li) || 0;
+  const t = PL.tempo || plTempoHint(pg, PL.sel.li || 0), bt = PL.seq ? Math.round(PL.seq.bars[0].T / plBeatTicks(PL.seq.bars[0].time)) : 4;
+  return `<div class="coach" id="plCoach" role="dialog" aria-label="연습 코치">
+    <div class="ch"><b>연습 코치</b><button class="btn iconbtn" data-act="plCoach" aria-label="닫기">${ICON.close}</button></div>
+    <div class="cbig"><button class="btn iconbtn" data-act="plTempo" data-f="-2" aria-label="느리게">${ICON.minus}</button><span id="plT2">${t}</span><button class="btn iconbtn" data-act="plTempo" data-f="2" aria-label="빠르게">${ICON.plus}</button></div>
+    <div class="csub">1분에 ${t}박${best ? ` · 지난 최고 ${best}` : ''}</div>
+    <div class="cbeats" id="plBeats">${Array.from({length: Math.min(12, Math.max(2, bt))}, () => '<i></i>').join('')}</div>
+    <div class="crow"><span>줄 ${esc(plLineNo())} · 반복</span><b id="plRep">${PL.rep}번</b></div>
+    <div class="crow"><span>빠르기 올리기</span><div class="seg">${[0, 2, 4, 6].map(v => `<button data-act="plStep" data-f="${v}" aria-pressed="${PL.step === v}">${v ? '+' + v : '끔'}</button>`).join('')}</div></div>
+    <div class="crow"><span>몇 번마다</span><div class="seg">${[2, 4, 8].map(v => `<button data-act="plEvery" data-f="${v}" aria-pressed="${PL.every === v}">${v}번</button>`).join('')}</div></div>
+    <div class="crow"><span>클릭 끄기 연습</span><button class="btn sm pltg" data-act="plGap" aria-pressed="${PL.gap}">2마디 켜고 2마디 끄기</button></div>
+    <div class="cbtns"><button class="btn primary pbig" data-act="plPlay">${PL.on ? PICON.pause : PICON.play}</button>
+      <button class="btn sm" data-act="plLine" data-f="-1">‹ 앞 줄</button><button class="btn sm" data-act="plLine" data-f="1">다음 줄 ›</button>
+      <button class="btn sm" data-act="plBest">오늘 기록 저장</button></div>
+    <span class="csub">줄을 누르면 그 줄을 연습해요 · P 재생 · 멈춤</span>
+  </div>`;
+}
+function plUI(){
+  const pb = document.getElementById('pbar'); if(pb){ const n = document.createElement('div'); n.innerHTML = plBarHTML(); pb.replaceWith(n.firstElementChild); }
+  const ch = document.getElementById('plCoach'), html = plCoachHTML();
+  if(ch){ if(html){ const n = document.createElement('div'); n.innerHTML = html; ch.replaceWith(n.firstElementChild); } else ch.remove(); }
+  else if(html && FV.on){ const f = fvEl(); if(f){ f.insertAdjacentHTML('beforeend', html); } }
+  const cb = document.querySelector('[data-act="plCoach"].fvcoach'); if(cb) cb.setAttribute('aria-pressed', PL.coach);
+  plMark();
+}
+function plBest(){ const pg = plCurPage(); if(!pg) return; const k = 'rh-best:' + pg.id + ':' + PL.sel.li, t = PL.tempo || 0;
+  if(t > (+lsGet(k) || 0)){ lsSet(k, t); toast(`기록했어요 · ♩ = ${t}`); } else toast(`지난 최고 ♩ = ${lsGet(k)} 그대로예요`); plUI(); }
+const PL_ACT = {
+  plPlay: () => plToggle(), plStop: () => { plStop(); PL.sel.li = 0; plUI(); },
+  plTempo: t => plTempoSet((PL.tempo || plTempoHint(plCurPage(), PL.sel.li)) + +t.dataset.f),
+  plOpt: t => { const f = t.dataset.f; PL[f] = !PL[f]; plSave(); plUI(); },
+  plLoop: t => { PL.loop = t.dataset.f; plSave(); plUI(); },
+  plLine: t => plLineStep(+t.dataset.f),
+  plCoach: () => { PL.coach = !PL.coach; plUI(); if(PL.coach) setTimeout(plReveal, 50); },
+  plStep: t => { PL.step = +t.dataset.f; plSave(); plUI(); }, plEvery: t => { PL.every = +t.dataset.f; plSave(); plUI(); },
+  plGap: () => { PL.gap = !PL.gap; plSave(); plUI(); }, plBest: () => plBest()
+};
+addEventListener('scroll', () => { if(PL.on || PL.coach || PL.picked) plMark(); }, true);
+addEventListener('resize', () => setTimeout(plMark, 120));
 
 // ── 야간 모드
 const VOICE_OPTS = [['book', '책대로'], ['1', '1성부'], ['2', '2성부'], ['2c', '2성부 간결']];
@@ -2145,6 +2485,7 @@ function copy(text, msg){
   if(navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast(msg), () => toast(text));
   else toast(text);
 }
+Object.assign(ACT, PL_ACT);
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if(!t || t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') return;
   const f = ACT[t.dataset.act]; if(!f) return;
@@ -2180,6 +2521,7 @@ document.addEventListener('input', e => {
   if(t.dataset.act === 'addText'){ S.addText = t.value; S.addFiles = []; }
   if(t.dataset.act === 'bkField' && S.bd){ S.bd[t.dataset.f] = t.value; const pv = $('cvPrev'); if(pv) pv.innerHTML = coverHTML(S.bd); return; }
   if(t.dataset.act === 'pgRange'){ S.pi = +t.value - 1; fitReader(); return; }
+  if(t.dataset.act === 'plTempoRange'){ plTempoSet(+t.value); return; }
   if(t.dataset.act === 'listQ'){ S.q = t.value; const pos = t.selectionStart; render(); const n = $('listQ'); if(n){ n.focus(); n.setSelectionRange(pos, pos); } }
   if(t.dataset.act === 'shareQ'){ S.shareQ = t.value; const pos = t.selectionStart; render(); const n = $('shareQ'); if(n){ n.focus(); n.setSelectionRange(pos, pos); } }
 });
