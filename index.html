@@ -236,6 +236,55 @@ a{color:var(--g)}
 .rnav .lab{min-width:84px;text-align:center;white-space:nowrap}
 .rempty{margin:auto;color:var(--muted)}
 
+/* ── 공유 기록 · 학생 빨리 불러오기 ─────────────── */
+.stustrip{display:flex;align-items:center;gap:10px;min-width:0}
+.stustrip .sl{font-size:12px;color:var(--muted);flex:none}
+.stustrip .chips{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 4px;scrollbar-width:thin;min-width:0}
+.schip{flex:none;border:1px solid var(--line-2);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13.5px;cursor:pointer;display:inline-flex;gap:5px;align-items:baseline}
+.schip small{font-size:11.5px;color:var(--muted)}
+.schip[aria-pressed="true"]{background:var(--g);border-color:var(--g);color:var(--on-g)}
+.schip[aria-pressed="true"] small{color:inherit;opacity:.75}
+.stupanel{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.stupanel .sh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.stupanel .sh b{font-size:15px}
+.stupanel .sfirst{font-size:12.5px;color:var(--muted)}
+.stupanel .sfill{flex:1}
+.stupanel .sh .iconbtn{width:34px;height:34px}
+.slist{display:flex;flex-direction:column;max-height:320px;overflow-y:auto}
+.srow{display:grid;grid-template-columns:84px 1fr auto;gap:10px;align-items:center;text-align:left;border:0;border-bottom:1px dashed var(--line);background:none;padding:8px 4px;font:inherit;color:inherit;cursor:pointer;border-radius:8px}
+.srow:hover{background:var(--g-soft)}
+.srow .sd{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.srow .stt{display:flex;flex-direction:column;gap:1px;min-width:0}
+.srow .stt b{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srow .stt small{font-size:12px;color:var(--muted)}
+.srow .st{font-size:11.5px;white-space:nowrap;border-radius:6px;padding:2px 8px;background:var(--line);color:var(--muted)}
+.srow .st.on{background:var(--g-soft);color:var(--g)}
+.srow .stt em{font-style:normal;color:#E8590C;font-weight:700}
+.vRead{position:relative}
+.stupop{position:absolute;left:16px;right:16px;top:72px;z-index:32;max-height:min(70vh,560px);overflow-y:auto;padding:10px 12px;border:1px solid var(--line-2);border-radius:14px;background:var(--paper);display:flex;flex-direction:column;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.08)}
+.stupop .stupanel{border:0;padding:0}
+.stbanner{margin:0 16px;padding:7px 12px;border-radius:10px;background:#fff3e8;border:1px solid #f4c9a8;color:#8a3b12;font-size:13px;display:flex;align-items:center;gap:10px}
+.stbanner .btn{margin-left:auto}
+.vRead.stedit #rpages .rh-line{cursor:pointer;border-radius:6px}
+.vRead.stedit #rpages .rh-line:hover{outline:2px solid #f0b48a;background:rgba(240,180,138,.08)}
+/* ── 손 순서 줄 더하기 ───────────────────────── */
+.sheet .in.xe{max-width:720px;width:min(720px,calc(100vw - 24px));gap:10px}
+.xprev{border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px;overflow-x:auto}
+.xprev svg{display:block}
+.xrow{display:flex;align-items:center;gap:8px}
+.xrow .xb{width:26px;height:26px;border-radius:7px;background:#8a3b12;color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.xrow .xb.o{background:#123b2a}
+.xrow .xo{flex:1;font:600 15px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--ink)}
+.xrow .xin{flex:1;min-width:0;font:600 15px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}
+.xrow .xc{font-size:12px;color:var(--muted);min-width:56px;text-align:right;font-variant-numeric:tabular-nums}
+.xrow .xc.ok{color:var(--g);font-weight:700}
+.xrow .xc.over{color:#c0392b;font-weight:700}
+.xrow .iconbtn{width:34px;height:34px;flex:none}
+.xrow.orig{opacity:.85}
+.xadd{display:flex;flex-direction:column;gap:6px}
+.xadd .preset{display:flex;flex-wrap:wrap;gap:6px}
+@media (max-width:720px){ .srow{grid-template-columns:70px 1fr} .srow .st{grid-column:2;justify-self:start} .stupop{top:112px;left:8px;right:8px} .xrow{flex-wrap:wrap} .xrow .xin{flex-basis:100%;order:2} .xrow .xc{order:1;margin-right:auto} }
+
 /* ── 소리 재생 · 연습 코치 ───────────────────── */
 .pbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 16px calc(10px + var(--sab));background:var(--paper);border-top:1px solid var(--line)}
 .pbar .pbig,.coach .pbig{width:46px;height:46px;padding:0;border-radius:50%;display:grid;place-items:center}
@@ -552,7 +601,7 @@ const firebaseConfig = {
 const OWNER_EMAIL = "artist4rhythm@gmail.com";
 
 // ③ 앱 버전 — 고쳐 올릴 때마다 여기와 version.json을 같이 올립니다
-const APP_VERSION = '2.7', APP_DATE = '2026.10.21';
+const APP_VERSION = '2.8', APP_DATE = '2026.11.06';
 
 // ══════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
@@ -885,6 +934,8 @@ function rLayoutLine(item, opt){
   });
   return {bars, endTime: time, units: bars.reduce((a, b) => a + b.units + b.extraL + b.extraR + R_PAD_L + R_PAD_R, 0)};
 }
+// 더한 손 순서 줄 글자 읽기: "RLRL RRLL" · "R L - L" → ['R','L','R','L',...] (빈칸은 무시, - 는 건너뛰기)
+function rStickSeq(row){ return [...String(row || '').toUpperCase()].filter(c => c === 'R' || c === 'L' || c === '-'); }
 // 줄에 무엇이 있는지 (위·아래 여백 계산용)
 function rLineFeatures(lay, item){
   const f = {stickRows: 0, count: false, label: false, txt: false, volta: false, dyn: false, bassAcc: false, upMax: 5, upMin: 4, downMin: 1, hasDown: false, ferm: false};
@@ -899,12 +950,13 @@ function rLineFeatures(lay, item){
   });
   if(item.tempo || item.above) f.txt = true;
   if(item.below) f.dyn = true;
+  f.xRows = Math.min(4, (item.sticks || []).length);   // 선생님이 더한 손 순서 줄 (줄 아래)
   return f;
 }
 function rSpace(F, stickBelow){
   const sRows = F.stickRows ? F.stickRows * 1.45 + .3 : 0;
   const above = (stickBelow ? 0 : sRows) + (F.count ? 1.7 : 0) + (F.label ? 2.5 : 0) + (F.volta ? 1.9 : 0) + (F.txt ? 1.9 : 0) + (F.ferm ? 1.2 : 0) + (F.tupAcc ? 1.5 : 0) + Math.max(0, F.upMax - 5) * .5 + 4.6;
-  const below = (F.hasDown ? 3.6 + Math.max(0, 1 - F.downMin) * .5 : 2.2 + Math.max(0, 1 - F.upMin) * .5) + (F.bassAcc ? .8 : 0) + (F.bassTupAcc ? 1.9 : 0) + (F.dyn ? 2.6 : 0) + (stickBelow ? sRows + .6 : 0);
+  const below = (F.hasDown ? 3.6 + Math.max(0, 1 - F.downMin) * .5 : 2.2 + Math.max(0, 1 - F.upMin) * .5) + (F.bassAcc ? .8 : 0) + (F.bassTupAcc ? 1.9 : 0) + (F.dyn ? 2.6 : 0) + (stickBelow ? sRows + .6 : 0) + (F.xRows ? F.xRows * 1.6 + .7 : 0);
   return {above, below, sRows};
 }
 
@@ -987,7 +1039,7 @@ function rDrawLine(item, W, sp, opt){
     return g; };
   const dotG = (x, y) => `<circle cx="${x}" cy="${y}" r="${.2*sp}" fill="${k}"/>`;
   const accG = (x, y) => `<path d="M${x-.4*sp},${y-.42*sp}L${x+.6*sp},${y}L${x-.4*sp},${y+.42*sp}" fill="none" stroke="${k}" stroke-width="${.13*sp}"/>`;
-  const upNotes = [], dnNotes = [], hairs = [];
+  const upNotes = [], dnNotes = [], hairs = [], handEv = [];
   let openHair = null;
   // 한 성부 그리기 (dir = 1 위 · -1 아래)
   const voice = (ev, dir, X, time, bgrp) => {
@@ -1125,6 +1177,7 @@ function rDrawLine(item, W, sp, opt){
       if(L.bev.length) s += voice(L.bev, -1, X, time, L.grp);
       L.ev.forEach(e => { s += marks(e, e.x); });
       L.bev.forEach(e => { s += marks(e, e.x); });
+      L.ev.forEach(e => { if(!e.rest && (e.inst || ['s']).some(c => c !== 'k' && c !== 'p')) handEv.push(e); });
     }
     if(L.tail) s += marks(L.tail, (L.sim || L.empty || L.multi) ? inner0 : inner1);
     // 마디선
@@ -1141,6 +1194,15 @@ function rDrawLine(item, W, sp, opt){
     const y = yOf(Math.min(...e.ps)) + .65*sp, c = 1.3*sp;
     s += `<path d="M${a},${y} Q${(a+b)/2},${y+c} ${b},${y} Q${(a+b)/2},${y+c*.73} ${a},${y}Z" fill="${k}"/>`; });
   ties(upNotes); ties(dnNotes);
+  // 더한 손 순서 줄: 손으로 치는 음마다 글자 하나 (R · L · - 건너뛰기)
+  if(F.xRows){ const y0 = (stickBelow && F.stickRows ? stBelowY + F.stickRows*1.45*sp + .3*sp : stBelowY + .3*sp);
+    const n0 = F.stickRows ? 2 : 1;
+    item.sticks.slice(0, 4).forEach((row, j) => { const y = y0 + j*1.6*sp, seq = rStickSeq(row);
+      s += `<g data-xrow="${j}"><rect x="${.15*sp}" y="${y - 1.15*sp}" width="${1.5*sp}" height="${1.5*sp}" rx="${.35*sp}" fill="#8a3b12"/>`
+        + `<text x="${.9*sp}" y="${y - .02*sp}" text-anchor="middle" style="font:700 ${1.1*sp}px var(--f-body)" fill="#fff">${n0 + j}</text>`;
+      handEv.forEach((e, i) => { const c = seq[i]; if(!c || c === '-') return;
+        s += `<text x="${e.x}" y="${y}" text-anchor="middle" style="font:700 ${1.35*sp}px var(--f-body)" fill="#8a3b12">${c}</text>`; });
+      s += '</g>'; }); }
   // ── 줄 끝
   const ex = W - post, last = lay.bars[lay.bars.length - 1];
   if(last && last.repE){ /* 위에서 그림 */ }
@@ -1254,6 +1316,7 @@ function validateRhythm(o, label){
     if(it.staff === 1 || it.staff === 5) out.staff = it.staff;
     if(it.end === true || it.end === false) out.end = it.end;
     if(it.sys === 'a' || it.sys === 'b') out.sys = it.sys;
+    if(Array.isArray(it.sticks)){ const xs = it.sticks.map(r => rStickSeq(r).join('')).filter(Boolean).slice(0, 4); if(xs.length) out.sticks = xs; }   // 더한 손 순서 줄
     ['tempo','above','below'].forEach(k => { if(it[k]) out[k] = str(it[k], 40); });
     if(it.bass != null){
       if(!Array.isArray(it.bass) || it.bass.length !== bars.length) errs.push(`${w}: 아래 성부(bass) 마디 수가 위 성부와 달라요`);
@@ -1349,12 +1412,14 @@ let ME = null, ADMIN = false;
 let scores = [];          // 보이는 악보
 let myShares = new Map(); // 수강생: scoreId → 공유 문서
 let members = [];         // 관리자: 회원 명단
+let allShares = [];       // 관리자: 모든 공유 (공유 기록 · 학생 빨리 불러오기)
 let books = new Map();   // 책장: 책 이름 → {ko, orig, author, color, style, cover, order}
 const S = {view:'scores', cur:null, book:lsGet('rh-book'), q:'', openParts:new Set(), mOpen:false,
            mode:lsGet('rh-mode') || 'shelf', reading:null, pi:0, two:false, toc:null, arrange:false, bookEdit:null, bd:null,
            shareFor:null, shareMap:new Map(), shareSel:new Set(), shareQ:'', shareBusy:false, delAsk:false,
            memFor:null, memMap:new Map(), memSel:new Set(), memBusy:false, memDelAsk:false,
-           addText:'', addResult:null, addFiles:[]};
+           addText:'', addResult:null, addFiles:[],
+           stu:lsGet('rh-stu'), stuOnly:false, stuPop:false, stEdit:false, xe:null};
 
 // ── 로그인 ──────────────────────────────────────
 function inAppName(){
@@ -1434,6 +1499,7 @@ async function loadAll(){
     const [sc, mb] = await Promise.all([getDocs(collection(db, 'scores')), getDocs(collection(db, 'members'))]);
     scores = sortScores(sc.docs.map(d => ({id:d.id, ...d.data()})));
     members = mb.docs.map(d => ({email:d.id, ...d.data()})).sort((a, b) => (a.name||'').localeCompare(b.name||'', 'ko'));
+    await loadAllShares();
   }else{
     const ss = await getDocs(query(collection(db, 'shares'), where('email', '==', ME.email)));
     myShares = new Map(ss.docs.map(d => [d.data().scoreId, {id:d.id, ...d.data()}]));
@@ -1443,6 +1509,10 @@ async function loadAll(){
   try{ const bs = await getDocs(collection(db, 'books')); books = new Map(bs.docs.map(d => [d.id, d.data()])); }
   catch(e){ console.warn('책장 정보를 못 읽었어요 (보안 규칙 확인)', e); books = new Map(); }
   if(!S.cur && scores.length && matchMedia('(min-width:760px)').matches) S.cur = scores[0].id;
+}
+async function loadAllShares(){
+  try{ const ss = await getDocs(collection(db, 'shares')); allShares = ss.docs.map(d => ({id:d.id, ...d.data()})); }
+  catch(e){ console.warn('공유 기록을 못 읽었어요', e); allShares = []; }
 }
 async function loadSharesFor(scoreId){
   S.shareFor = scoreId; S.shareBusy = true; S.delAsk = false; render();
@@ -1493,6 +1563,9 @@ function render(){
   fitStage(); fitReader();
   const sh = document.getElementById('bookSheet'); if(sh) sh.remove();
   if(S.bookEdit) document.body.insertAdjacentHTML('beforeend', bookSheetHTML());
+  const xs = document.getElementById('xeSheet'), xf = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.act === 'xeRow' ? document.activeElement.dataset.i : null;
+  if(xs) xs.remove();
+  if(S.xe){ document.body.insertAdjacentHTML('beforeend', xeSheetHTML()); if(xf != null){ const el = document.querySelector(`#xeSheet [data-act="xeRow"][data-i="${xf}"]`); if(el){ el.focus(); el.setSelectionRange(el.value.length, el.value.length); } } }
 }
 
 function lsGet(k){ try{ return localStorage.getItem(k) || ''; }catch(e){ return ''; } }
@@ -1545,11 +1618,116 @@ function bookInfo(key){
   return {key, ko: d.ko || key, orig: d.orig || '', author: d.author || '', color: d.color || '#123B2A',
           cover: d.cover || '', style: d.style || (d.cover ? 'image' : 'design'), order: typeof d.order === 'number' ? d.order : 9999};
 }
+function stuPool(){ if(!(ADMIN && S.stu && S.stuOnly)) return scores; const ids = new Set(sharesOf(S.stu).map(x => x.scoreId)); return scores.filter(s => ids.has(s.id)); }
 function shelfBooks(){
-  const keys = [...new Set(scores.map(s => s.book || '기타'))];
+  const keys = [...new Set(stuPool().map(s => s.book || '기타'))];
   return keys.map(bookInfo).sort((a, b) => a.order - b.order || a.ko.localeCompare(b.ko, 'ko'));
 }
-function bookPages(key){ return scores.filter(s => (s.book || '기타') === key); }
+function bookPages(key){ return stuPool().filter(s => (s.book || '기타') === key); }
+// ── 공유 기록 · 학생 빨리 불러오기 (관리자)
+function tsDate(v){ try{ return typeof v === 'string' ? new Date(v) : v && v.toDate ? v.toDate() : v instanceof Date ? v : v && v.seconds ? new Date(v.seconds * 1000) : null; }catch(e){ return null; } }
+function sharesOf(email){ return allShares.filter(x => x.email === email && scores.some(s => s.id === x.scoreId))
+  .sort((a, b) => (tsDate(b.sharedAt) || new Date()) - (tsDate(a.sharedAt) || new Date())); }
+function fmtDay(d){ if(!d) return '방금'; return `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} (${'일월화수목금토'[d.getDay()]})`; }
+function fmtFull(d){ return d ? `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}` : ''; }
+function stuList(){
+  const st = members.filter(m => m.role !== 'admin');
+  const last = m => { const l = sharesOf(m.email)[0]; return l ? (tsDate(l.sharedAt) || new Date()).getTime() : 0; };
+  return st.map(m => ({m, n: sharesOf(m.email).length, last: last(m)})).sort((a, b) => b.last - a.last || (a.m.name || '').localeCompare(b.m.name || '', 'ko'));
+}
+function stuStripHTML(){
+  if(!ADMIN) return '';
+  const L = stuList(); if(!L.length) return '';
+  return `<div class="stustrip" role="group" aria-label="학생 빨리 불러오기"><span class="sl">학생</span><div class="chips">${L.map(({m, n}) =>
+    `<button class="schip" data-act="stuPick" data-email="${esc(m.email)}" aria-pressed="${S.stu === m.email}">${esc(m.name || m.email)}<small>${n}</small></button>`).join('')}</div></div>`;
+}
+function stuPanelHTML(){
+  if(!ADMIN || !S.stu) return '';
+  const m = members.find(x => x.email === S.stu); if(!m) return '';
+  const list = sharesOf(m.email), name = esc(m.name || m.email);
+  const first = list.length ? tsDate(list[list.length - 1].sharedAt) : null;
+  const weeks = first ? Math.floor((Date.now() - first.getTime()) / 6048e5) + 1 : 0;
+  return `<div class="stupanel" aria-label="${name} 받은 악보">
+    <div class="sh"><b>${name} · 받은 악보 ${list.length}쪽</b>${first ? `<span class="sfirst">처음 공유 ${fmtFull(first)} · ${weeks}주째</span>` : ''}
+      <span class="sfill"></span>${list.length ? `<button class="btn sm pltg" data-act="stuOnly" aria-pressed="${S.stuOnly}">${name} 악보만 보기</button>` : ''}
+      <button class="btn iconbtn" data-act="stuClose" aria-label="닫기">${ICON.close}</button></div>
+    ${list.length ? `<div class="slist">${list.map((x, i) => { const sc = scores.find(s => s.id === x.scoreId), d = tsDate(x.sharedAt), o = tsDate(x.openedAt);
+      return `<button class="srow" data-act="stuOpen" data-id="${esc(sc.id)}"><span class="sd">${fmtDay(d)}</span>
+        <span class="stt"><b>${esc(sc.title)}</b><small>${esc(bookInfo(sc.book || '기타').ko)} · ${esc(partOf(sc))}${i === list.length - 1 ? ' · <em>첫 공유</em>' : ''}</small></span>
+        <span class="st ${o ? 'on' : ''}">${o ? '열어봄 ' + fmtDay(o).slice(0, 5) : '안 열어봄'}</span></button>`; }).join('')}</div>`
+      : `<div class="sub">아직 공유한 악보가 없어요. 악보의 <b>공유 설정</b>이나 회원 화면에서 줄 수 있어요.</div>`}
+  </div>`;
+}
+function stuOpen(id){
+  const sc = scores.find(s => s.id === id); if(!sc) return;
+  S.stuPop = false;
+  if(S.mode === 'list'){ S.cur = id; S.mOpen = true; S.book = sc.book || '기타'; render(); return; }
+  const key = sc.book || '기타'; S.reading = key; S.book = key; lsSet('rh-book', key);
+  S.pi = Math.max(0, bookPages(key).findIndex(s => s.id === id)); render();
+}
+// ── 손 순서 줄 더하기 (관리자): 원래 R · L 은 그대로 두고, 줄 아래에 손 순서를 2 · 3 · 4줄까지 더함
+function xeTime(pg, ii){ let t = pg.time || '4/4';
+  for(let k = 0; k < ii; k++){ const it = pg.items[k]; if(it.h){ if(it.time) t = it.time; continue; }
+    try{ t = rLayoutLine(it, {time: it.time || t, bass: pg.bass, split: rSplitOn(pg)}).endTime || t; }catch(e){} }
+  return pg.items[ii].time || t; }
+function xeHands(pg, ii){
+  const it = pg.items[ii], lay = rLayoutLine(it, {time: xeTime(pg, ii), bass: pg.bass, split: rSplitOn(pg)}), out = [];
+  lay.bars.forEach(L => { if(L.sim || L.multi || L.empty) return;
+    L.ev.forEach(e => { if(!e.rest && (e.inst || ['s']).some(c => c !== 'k' && c !== 'p')) out.push(e.stick ? e.stick[0] : '-'); }); });
+  return out;
+}
+function xeOpen(sid, ii){
+  const pg = scores.find(s => s.id === sid); if(!pg || pg.kind !== 'rhythm' || !pg.items[ii] || pg.items[ii].h) return;
+  S.xe = {sid, ii, rows: (pg.items[ii].sticks || []).map(r => xeGroup(rStickSeq(r))), busy: false}; render();
+}
+function xeGroup(arr){ return arr.join('').replace(/(.{4})(?=.)/g, '$1 '); }
+function xePattern(kind, hands){
+  const N = hands.length, rep = p => Array.from({length: N}, (_, i) => p[i % p.length]);
+  if(kind === 'copy') return hands.slice();
+  if(kind === 'mirror') return hands.map(c => c === 'R' ? 'L' : c === 'L' ? 'R' : '-');
+  return rep({rl: 'RL', lr: 'LR', rrll: 'RRLL', llrr: 'LLRR', para: 'RLRRLRLL', paral: 'LRLLRLRR'}[kind] || 'RL');
+}
+function xeLinePreview(pg, ii, rows){
+  const it = {...pg.items[ii], sticks: rows.map(r => rStickSeq(r).join('')).filter(Boolean)};
+  const time = xeTime(pg, ii), opt = {time, bass: pg.bass, staff: pg.staff === 1 ? 1 : 5, stickBelow: pg.stick === 'below', split: rSplitOn(pg), hideLowRests: rHideLow(pg), showTime: true};
+  const lay = rLayoutLine(it, opt), W = Math.min(640, innerWidth - 64), sp = Math.max(3.2, Math.min(7, W / (lay.units + 6.2)));
+  try{ return rDrawLine(it, W, sp, opt).svg; }catch(e){ return ''; }
+}
+function xeSheetHTML(){
+  const X = S.xe; if(!X) return '';
+  const pg = scores.find(s => s.id === X.sid); if(!pg) return '';
+  const it = pg.items[X.ii], hands = xeHands(pg, X.ii), N = hands.length, hasOrig = hands.some(c => c !== '-');
+  const lineNo = it.n || String(pg.items.slice(0, X.ii + 1).filter(x => !x.h).length);
+  const n0 = hasOrig ? 2 : 1, full = X.rows.length >= 4;
+  const P = [['rl', 'RLRL 번갈아'], ['lr', 'LRLR 왼손 먼저'], ['rrll', 'RRLL 더블'], ['llrr', 'LLRR'], ['para', 'RLRR LRLL 파라디들'], ['paral', 'LRLL RLRR'],
+    ...(hasOrig ? [['mirror', '원래 순서 좌우 바꾸기'], ['copy', '원래 순서 복사']] : []), ['blank', '빈 줄 (직접 쓰기)']];
+  return `<div class="sheet" id="xeSheet" data-act="xeBg"><div class="in xe" role="dialog" aria-label="손 순서 줄 더하기">
+    <div style="display:flex;align-items:center;gap:10px"><h2 class="t-title" style="flex:1">${esc(lineNo)}번 줄 · 손 순서 더하기</h2><button class="btn sm" data-act="xeCancel">닫기</button></div>
+    <div class="xprev" id="xePrev">${xeLinePreview(pg, X.ii, X.rows)}</div>
+    <div class="sub">손으로 치는 음 <b>${N}개</b>에 글자를 하나씩 맞춰요. <b>R</b> 오른손 · <b>L</b> 왼손 · <b>-</b> 건너뛰기 · 띄어쓰기는 보기 좋게만 쓰여요.</div>
+    ${hasOrig ? `<div class="xrow orig"><span class="xb o">1</span><span class="xo">${esc(xeGroup(hands))}</span><span class="xc">원래 순서 (그대로)</span></div>` : ''}
+    ${X.rows.map((r, i) => { const c = rStickSeq(r).length;
+      return `<div class="xrow"><span class="xb">${n0 + i}</span>
+        <input class="input xin" data-act="xeRow" data-i="${i}" value="${esc(r)}" aria-label="${n0 + i}번째 손 순서" autocapitalize="characters" spellcheck="false" autocomplete="off">
+        <span class="xc ${c === N ? 'ok' : c > N ? 'over' : ''}" id="xeC${i}">${c} / ${N}</span>
+        <button class="btn iconbtn" data-act="xeMove" data-i="${i}" data-d="-1" ${i === 0 ? 'disabled' : ''} aria-label="위로">↑</button>
+        <button class="btn iconbtn" data-act="xeMove" data-i="${i}" data-d="1" ${i === X.rows.length - 1 ? 'disabled' : ''} aria-label="아래로">↓</button>
+        <button class="btn sm danger" data-act="xeDel" data-i="${i}">지우기</button></div>`; }).join('')}
+    ${full ? '<div class="sub">손 순서 줄은 4줄까지 더할 수 있어요.</div>' : `<div class="xadd"><span class="sub">손 순서 줄 더하기</span><div class="preset">${P.map(([k, l]) => `<button class="btn sm" data-act="xeAdd" data-f="${k}">${l}</button>`).join('')}</div></div>`}
+    <div class="rowbtns" style="margin-top:4px"><button class="btn primary" data-act="xeSave" ${X.busy ? 'disabled' : ''}>${X.busy ? '저장 중' : '저장'}</button><button class="btn" data-act="xeCancel">취소</button>
+      <span class="sub" style="margin-left:auto">이 쪽을 받은 학생 모두에게 보여요</span></div>
+  </div></div>`;
+}
+function xeRefresh(){ const X = S.xe; if(!X) return; const pg = scores.find(s => s.id === X.sid); const el = document.getElementById('xePrev'); if(pg && el) el.innerHTML = xeLinePreview(pg, X.ii, X.rows);
+  const N = xeHands(pg, X.ii).length; X.rows.forEach((r, i) => { const c = document.getElementById('xeC' + i); if(c){ const n = rStickSeq(r).length; c.textContent = `${n} / ${N}`; c.className = 'xc ' + (n === N ? 'ok' : n > N ? 'over' : ''); } }); }
+async function xeSave(){
+  const X = S.xe; if(!X) return; const pg = scores.find(s => s.id === X.sid); if(!pg) return;
+  const rows = X.rows.map(r => rStickSeq(r).join('')).filter(Boolean).slice(0, 4);
+  const items = pg.items.map((it, k) => { if(k !== X.ii) return it; const n = {...it}; if(rows.length) n.sticks = rows; else delete n.sticks; return n; });
+  X.busy = true; render();
+  try{ await updateDoc(doc(db, 'scores', pg.id), {items}); pg.items = items; S.xe = null; toast(rows.length ? `손 순서 ${rows.length}줄을 저장했어요` : '더한 손 순서를 지웠어요'); render(); }
+  catch(e){ X.busy = false; toast(errText(e)); render(); }
+}
 function coverHTML(b){
   if(b.style === 'image' && b.cover) return `<div class="cv img"><img src="${esc(b.cover)}" alt="${esc(b.ko)} 표지"></div>`;
   return `<div class="cv ${isLight(b.color) ? 'light' : ''}" style="--cv:${esc(b.color)}"><div class="d"><span class="wm">Rhythm House</span>
@@ -1566,8 +1744,9 @@ function viewShelf(){
   const list = shelfBooks();
   const head = `<div class="shead"><div class="tx"><div class="eyebrow">DRUM SCORE</div><h1 class="t-title">${ADMIN ? '책장' : '내 책장'}</h1></div>
       ${ADMIN && list.length ? `<button class="btn ${S.arrange ? 'primary' : ''}" data-act="arrange">${S.arrange ? '정리 끝' : '책장 정리'}</button>` : ''}${modeSeg()}${themeBtn()}</div>`;
-  if(!list.length) return `<div class="vShelf"><div class="shelfwrap">${head}${listHTML()}</div></div>`;
-  return `<div class="vShelf"><div class="shelfwrap">${head}
+  const stu = stuStripHTML() + stuPanelHTML() + (ADMIN && S.stu && S.stuOnly ? '' : '');
+  if(!list.length) return `<div class="vShelf"><div class="shelfwrap">${head}${stu}${listHTML()}</div></div>`;
+  return `<div class="vShelf"><div class="shelfwrap">${head}${stu}
     ${S.arrange ? '<span class="sub">화살표로 책 순서를 바꾸고, 표지 고치기에서 제목 · 색 · 표지 사진을 바꿔요. 바꾸면 바로 저장돼요.</span>' : ''}
     <div class="covers">${list.map((b, i) => { const pg = bookPages(b.key), parts = new Set(pg.map(partOf)).size;
       return `<div class="bk"><button class="open" data-act="readBook" data-f="${esc(b.key)}" ${S.arrange ? 'tabindex="-1"' : ''}>${coverHTML(b)}
@@ -1636,15 +1815,19 @@ function viewRead(){
       const open = S.openParts.has(key) || (p === curPart && !S.openParts.has('!' + key));
       return `<div class="part"><button class="ph" data-act="part" data-f="${esc(key)}" aria-expanded="${open}">${CHEV}<span class="pn">${esc(p)}</span><span class="pc">${arr.length}쪽</span></button>
         ${open ? `<div class="pitems">${arr.map(([pg, i]) => `<button class="row" data-act="goPage" data-i="${i}" aria-current="${vis.has(pg.id)}"><span class="rt">${esc(pg.title)}</span><span class="rp">${esc(pageNo(pg))}</span></button>`).join('')}</div>` : ''}</div>`; }).join('')}</nav>` : '';
-  return `<div class="vRead">
+  return `<div class="vRead ${S.stEdit ? 'stedit' : ''}">
     <div class="rbar"><button class="btn sm" data-act="closeBook" aria-label="책장">${ICON.back}<span class="lbl">책장</span></button>
       <button class="btn iconbtn" data-act="toggleToc" aria-label="목차" title="목차" aria-pressed="${tocOpen()}">${ICON.toc}</button>
       <div class="tt"><span class="sub">${esc(b.ko)}${b.orig ? ' · ' + esc(b.orig) : ''}</span><span class="t-title" id="rTitle"></span></div>
       <button class="btn sm" data-act="fvOpen" aria-label="크게 보기" title="크게 보기 (F)">${ICON.expand}<span class="lbl">크게 보기</span></button>
       <button class="btn sm" data-act="voiceCycle" aria-label="악보 보기 바꾸기" title="손 · 발 성부 보기 바꾸기 (V)">${ICON.voices}<span class="lbl">${esc(voiceLabel())}</span></button>
       ${themeBtn()}
-      ${ADMIN ? '<button class="btn sm" data-act="readShare">공유<span class="lbl"> 설정</span></button>' : ''}
+      ${ADMIN ? `<button class="btn sm" data-act="stuPop" aria-pressed="${S.stuPop}" aria-expanded="${S.stuPop}">${ICON.people}<span class="lbl">${S.stu && S.stuOnly ? esc((members.find(m => m.email === S.stu) || {}).name || '학생') + ' 악보만' : '학생'}</span></button>
+        <button class="btn sm" data-act="stEdit" aria-pressed="${S.stEdit}" title="줄을 눌러 손 순서 줄 더하기">RL<span class="lbl"> 손 순서</span></button>
+        <button class="btn sm" data-act="readShare">공유<span class="lbl"> 설정</span></button>` : ''}
       <button class="btn primary" data-act="readPrint" aria-label="인쇄">${ICON.print}<span class="lbl">인쇄</span></button></div>
+    ${ADMIN && S.stuPop ? `<div class="stupop">${stuStripHTML()}${stuPanelHTML() || '<div class="sub">학생을 고르면 받은 악보가 날짜 순으로 나와요</div>'}</div>` : ''}
+    ${S.stEdit ? '<div class="stbanner">손 순서 더하기 · 고칠 줄을 누르세요 <button class="btn sm" data-act="stEdit">끝내기</button></div>' : ''}
     <div class="rbody">${toc}
       <div class="spread" id="spread">
         <div class="pages" id="rpages"></div>
@@ -1859,6 +2042,10 @@ document.addEventListener('click', e => {
   const ln = e.target.closest && e.target.closest('.paper[data-fvi] .rh-line');
   const moved = plDown && Math.hypot(e.clientX - plDown.x, e.clientY - plDown.y) > 6;
   // 줄 고르기: 읽기 화면은 줄 번호를 누르거나 재생 중일 때, 크게 보기는 재생 중이거나 연습 코치가 열려 있을 때
+  if(ln && !moved && S.stEdit && ADMIN && !FV.on){ const paper = ln.closest('.paper[data-fvi]'), pg = bookPages(S.reading)[+paper.dataset.fvi];
+    if(pg && pg.kind === 'rhythm'){ const idx = [...paper.querySelectorAll('.rh-line')].indexOf(ln); let c = -1;
+      const ii = pg.items.findIndex(it => !it.h && ++c === idx); if(ii >= 0){ xeOpen(pg.id, ii); e.stopPropagation(); return; } } }
+  if(!ln && S.stEdit && ADMIN && !FV.on && e.target.closest && e.target.closest('#rpages .paper[data-fvi]')){ e.stopPropagation(); return; }
   if(ln && !moved && (FV.on ? (PL.on || PL.coach) : (PL.on || e.target.closest('.rh-n')))){ if(plSelectFromEl(ln)){ PL.selAt = Date.now(); e.stopPropagation(); return; } }
   const p = e.target.closest && e.target.closest('#rpages .paper[data-fvi]'); if(p) fvOpen(+p.dataset.fvi); });
 addEventListener('mousemove', e => { const d = FV.drag; if(!d) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if(Math.abs(dx) + Math.abs(dy) > 4) d.st.classList.add('drag');
@@ -2289,6 +2476,7 @@ function viewScores(){
   return `<div class="vScores ${S.mOpen && cur ? 'm-open' : ''}">
     <aside class="list" aria-label="악보 목록">
       <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap"><div style="flex:1;display:flex;flex-direction:column;gap:2px"><div class="eyebrow">DRUM SCORE</div><h1 class="t-title">${ADMIN ? '악보' : '내 악보'}</h1></div>${modeSeg()}</div>
+      ${stuStripHTML()}${stuPanelHTML()}
       ${listHTML()}
     </aside>
     <div class="right">
@@ -2436,14 +2624,14 @@ async function saveShares(){
   const b = writeBatch(db);
   for(const e of S.shareSel) if(!S.shareMap.has(e)) b.set(doc(db, 'shares', `${id}__${e}`), {scoreId:id, email:e, sharedAt:serverTimestamp(), openedAt:null});
   for(const e of S.shareMap.keys()) if(!S.shareSel.has(e)) b.delete(doc(db, 'shares', `${id}__${e}`));
-  try{ await b.commit(); toast('공유를 저장했어요'); S.shareFor = null; await loadSharesFor(id); }catch(e){ toast(errText(e)); }
+  try{ await b.commit(); toast('공유를 저장했어요'); S.shareFor = null; await loadAllShares(); await loadSharesFor(id); }catch(e){ toast(errText(e)); }
 }
 async function saveMemberShares(){
   const em = S.memFor; if(!em) return;
   const b = writeBatch(db);
   for(const id of S.memSel) if(!S.memMap.has(id)) b.set(doc(db, 'shares', `${id}__${em}`), {scoreId:id, email:em, sharedAt:serverTimestamp(), openedAt:null});
   for(const id of S.memMap.keys()) if(!S.memSel.has(id)) b.delete(doc(db, 'shares', `${id}__${em}`));
-  try{ await b.commit(); toast('받은 악보를 저장했어요'); S.shareFor = null; await loadSharesOf(em); }catch(e){ toast(errText(e)); }
+  try{ await b.commit(); toast('받은 악보를 저장했어요'); S.shareFor = null; await loadAllShares(); await loadSharesOf(em); }catch(e){ toast(errText(e)); }
 }
 async function deleteScore(){
   const id = S.cur; if(!id) return;
@@ -2560,7 +2748,23 @@ const ACT = {
   themeSet: t => { lsSet('rh-theme', t.dataset.f); applyTheme(); render(); },
   voiceSet: t => setVoices(t.dataset.f), voiceCycle: () => setVoices(voiceNext()),
   readBook: t => { if(S.arrange) return; const k = t.dataset.f; S.reading = k; S.pi = 0; lsSet('rh-book', k); S.book = k; render(); },
-  closeBook: () => { S.reading = null; render(); },
+  closeBook: () => { S.reading = null; S.stEdit = false; S.stuPop = false; render(); },
+  stuPick: t => { const em = t.dataset.email; S.stu = S.stu === em ? '' : em; if(!S.stu) S.stuOnly = false; lsSet('rh-stu', S.stu); render(); },
+  stuClose: () => { S.stu = ''; S.stuOnly = false; lsSet('rh-stu', ''); render(); },
+  stuOnly: () => { const cur = S.reading ? bookPages(S.reading)[S.pi] : null; S.stuOnly = !S.stuOnly;
+    if(S.reading){ const pages = bookPages(S.reading); if(!pages.length){ S.reading = null; } else S.pi = Math.max(0, cur ? pages.findIndex(p => p.id === cur.id) : 0); }
+    render(); },
+  stuOpen: t => stuOpen(t.dataset.id),
+  stuPop: () => { S.stuPop = !S.stuPop; render(); },
+  stEdit: () => { S.stEdit = !S.stEdit; if(S.stEdit) toast('고칠 줄을 누르면 손 순서 줄을 더할 수 있어요'); render(); },
+  xeCancel: () => { S.xe = null; render(); },
+  xeBg: (t, e) => { if(e && e.target === t){ S.xe = null; render(); } },
+  xeAdd: t => { const X = S.xe; if(!X || X.rows.length >= 4) return; const pg = scores.find(s => s.id === X.sid), hands = xeHands(pg, X.ii);
+    X.rows.push(t.dataset.f === 'blank' ? '' : xeGroup(xePattern(t.dataset.f, hands))); render();
+    if(t.dataset.f === 'blank') setTimeout(() => { const el = document.querySelector(`#xeSheet [data-act="xeRow"][data-i="${X.rows.length - 1}"]`); if(el) el.focus(); }); },
+  xeDel: t => { const X = S.xe; if(!X) return; X.rows.splice(+t.dataset.i, 1); render(); },
+  xeMove: t => { const X = S.xe; if(!X) return; const i = +t.dataset.i, j = i + +t.dataset.d; if(j < 0 || j >= X.rows.length) return; [X.rows[i], X.rows[j]] = [X.rows[j], X.rows[i]]; render(); },
+  xeSave: () => xeSave(),
   toggleToc: () => { S.toc = !tocOpen(); render(); },
   goPage: t => { S.pi = +t.dataset.i; if(!matchMedia('(min-width:1024px)').matches) S.toc = false; render(); },
   pgPrev: () => turn(-1), pgNext: () => turn(1),
@@ -2641,6 +2845,8 @@ document.addEventListener('input', e => {
   if(t.dataset.act === 'bkField' && S.bd){ S.bd[t.dataset.f] = t.value; const pv = $('cvPrev'); if(pv) pv.innerHTML = coverHTML(S.bd); return; }
   if(t.dataset.act === 'pgRange'){ S.pi = +t.value - 1; fitReader(); return; }
   if(t.dataset.act === 'plTempoRange'){ plTempoSet(+t.value); return; }
+  if(t.dataset.act === 'xeRow' && S.xe){ const v = t.value.toUpperCase().replace(/[^RL\- ]/g, ''); if(v !== t.value){ const p = t.selectionStart; t.value = v; try{ t.setSelectionRange(p, p); }catch(_){} }
+    S.xe.rows[+t.dataset.i] = v; xeRefresh(); return; }
   if(t.dataset.act === 'listQ'){ S.q = t.value; const pos = t.selectionStart; render(); const n = $('listQ'); if(n){ n.focus(); n.setSelectionRange(pos, pos); } }
   if(t.dataset.act === 'shareQ'){ S.shareQ = t.value; const pos = t.selectionStart; render(); const n = $('shareQ'); if(n){ n.focus(); n.setSelectionRange(pos, pos); } }
 });
