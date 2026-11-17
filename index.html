@@ -338,6 +338,30 @@ a{color:var(--g)}
 .paper[data-fvi] .rh-n{cursor:pointer}
 @media (max-width:720px){ .coach .cbig span{font-size:38px} .coach{gap:7px;padding:10px 12px 12px} .pbar .hide-m{display:none} .prange{width:80px} .pbar{gap:6px;padding:8px 10px calc(8px + var(--sab))} .coach{left:16px;right:16px;width:auto} }
 
+/* ── 크게 보기 시계 ─────────────────────────── */
+.fvclk{position:absolute;right:16px;top:calc(var(--fvbarh, 56px) + 12px);z-index:70;transition:top .18s;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.fv.nobar .fvclk{top:calc(12px + var(--sat))}
+.fvclk.hide{display:none}
+.fvclk .clkbtn{border:0;padding:0;background:none;cursor:pointer;line-height:0;border-radius:50%;filter:drop-shadow(0 3px 10px rgba(0,0,0,.18))}
+.fvclk.digital .clkbtn{border-radius:14px}
+.fvclk .clkbtn:focus-visible{outline:3px solid var(--g);outline-offset:3px}
+.fvclk .face{fill:var(--paper);stroke:var(--g);stroke-width:2.6}
+.fvclk .tick{stroke:var(--g);stroke-linecap:round}
+.fvclk .hh{stroke:var(--ink);stroke-width:4.4;stroke-linecap:round}
+.fvclk .mh{stroke:var(--ink);stroke-width:2.8;stroke-linecap:round}
+.fvclk .sh{stroke:#E8590C;stroke-width:1.2;stroke-linecap:round}
+.fvclk .pin{fill:#E8590C}
+.fvclk .dig{background:var(--paper);color:var(--ink);border:2px solid var(--g);border-radius:.45em;padding:.18em .5em;display:flex;align-items:baseline;gap:.22em;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fvclk .dig b{font-weight:700;letter-spacing:.02em}
+.fvclk .dig .ap{font-size:.42em;font-weight:600;color:var(--muted)}
+.fvclk .dig .ap:empty{display:none}
+.fvclk .dig .ss{font-size:.45em;color:#E8590C;font-weight:700}
+.clkmenu{background:var(--paper);color:var(--ink);border:1px solid var(--line-2);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.22);padding:10px 12px;display:flex;flex-direction:column;gap:9px;width:300px;max-width:calc(100vw - 32px);font-size:13px}
+.clkmenu .r{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.clkmenu .r > span{color:var(--muted);min-width:34px}
+.clkmenu .seg button{padding:5px 10px;font-size:12.5px}
+.clkmenu .clkr{flex:1;accent-color:var(--g)}
+
 /* ── 크게 보기 (전체 화면 악보) ───────────────────── */
 .pages .paper{cursor:zoom-in}
 .fv{position:fixed;inset:0;z-index:60;background:#E9ECE8;display:flex;flex-direction:column}
@@ -601,7 +625,7 @@ const firebaseConfig = {
 const OWNER_EMAIL = "artist4rhythm@gmail.com";
 
 // ③ 앱 버전 — 고쳐 올릴 때마다 여기와 version.json을 같이 올립니다
-const APP_VERSION = '2.8', APP_DATE = '2026.11.06';
+const APP_VERSION = '2.9', APP_DATE = '2026.11.17';
 
 // ══════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
@@ -617,6 +641,7 @@ const ymd = d => `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.$
 function errText(e){ const c = (e && e.code) || ''; if(c.includes('permission')) return '권한이 없어요'; if(c.includes('unavailable') || c.includes('network')) return '인터넷 연결을 확인해 주세요'; return '문제가 생겼어요' + (c ? ' · ' + c : ''); }
 
 const ICON = {
+  clock: '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
   vol: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>',
   metro: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l4 18H5z"/><path d="M12 15l5-8"/><path d="M8 15h8"/></svg>',
   voices: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h18M3 11h18M3 15h18"/><path d="M8 4v7M16 18v-7"/><circle cx="7" cy="11" r="1.6" fill="currentColor"/><circle cx="15" cy="15" r="1.6" fill="currentColor"/></svg>',
@@ -1891,7 +1916,7 @@ function fvClose(){
   FV.on = false; const el = fvEl(); el.classList.add('hide'); el.innerHTML = ''; document.body.style.overflow = '';
   if(FV.io){ FV.io.disconnect(); FV.io = null; }
   if(FV.myFull && document.fullscreenElement) document.exitFullscreen().catch(() => {});
-  FV.myFull = false; plCursor(null);
+  FV.myFull = false; plCursor(null); clearTimeout(CLK.timer); CLK.menu = false;
   const n = fvPages().length; if(n){ S.pi = Math.min(FV.i, n - 1); render(); }
 }
 function fvFullscreen(auto){
@@ -1912,11 +1937,62 @@ function fvBar(n){
     <div class="grp"><button class="btn iconbtn" data-act="fvPrev" aria-label="앞 쪽">${ICON.prev}</button><span class="pl" id="fvLab">${lab}</span><button class="btn iconbtn" data-act="fvNext" aria-label="다음 쪽">${ICON.next}</button></div>
     <button class="btn" data-act="voiceCycle" title="손 · 발 성부 보기 바꾸기 (V)">${ICON.voices}<span class="lbl">${esc(voiceLabel())}</span></button>
     <button class="btn fvcoach" data-act="plCoach" aria-pressed="${PL.coach}" title="연습 코치 (C)">${ICON.metro}<span class="lbl">연습 코치</span></button>
+    <button class="btn" data-act="clkToggle" aria-pressed="${CLK.on}" title="시계 보이기 · 숨기기 (T)">${ICON.clock}<span class="lbl">시계</span></button>
     <button class="btn" data-act="fvFull" title="전체 화면 (F)">${ICON.expand}<span class="lbl">전체 화면</span></button>
   </div>
+  ${clkHTML()}
   <div class="fvstage" id="fvStage"><div class="fvin${FV.mode === 'scroll' ? ' scroll' : ''}" id="fvIn"></div></div>
   <div class="fvhint" id="fvHint"></div>`;
 }
+// ── 크게 보기 시계 (오른쪽 위) · 아날로그 / 디지털 · 크기 조절
+const CLK = {on: lsGet('rh-clk') !== '0', type: lsGet('rh-clk-type') === 'digital' ? 'digital' : 'analog',
+  size: +(lsGet('rh-clk-size') || 110), sec: lsGet('rh-clk-sec') !== '0', h24: lsGet('rh-clk-24') === '1', menu: false, timer: 0};
+function clkSave(){ lsSet('rh-clk', CLK.on ? '1' : '0'); lsSet('rh-clk-type', CLK.type); lsSet('rh-clk-size', CLK.size); lsSet('rh-clk-sec', CLK.sec ? '1' : '0'); lsSet('rh-clk-24', CLK.h24 ? '1' : '0'); }
+function clkFace(){
+  if(CLK.type === 'digital') return `<div class="dig" style="font-size:${Math.round(CLK.size * .3)}px"><span class="ap" id="clkAp"></span><b id="clkHM">--:--</b>${CLK.sec ? '<span class="ss" id="clkS">00</span>' : ''}</div>`;
+  const tk = Array.from({length: 12}, (_, i) => { const big = i % 3 === 0, a = i * 30 * Math.PI / 180, r1 = big ? 37 : 40, r2 = 45;
+    return `<line x1="${(50 + r1 * Math.sin(a)).toFixed(2)}" y1="${(50 - r1 * Math.cos(a)).toFixed(2)}" x2="${(50 + r2 * Math.sin(a)).toFixed(2)}" y2="${(50 - r2 * Math.cos(a)).toFixed(2)}" stroke-width="${big ? 3 : 1.6}"/>`; }).join('');
+  return `<svg viewBox="0 0 100 100" width="${CLK.size}" height="${CLK.size}" aria-hidden="true">
+    <circle cx="50" cy="50" r="48" class="face"/><g class="tick">${tk}</g>
+    <line id="clkH" x1="50" y1="54" x2="50" y2="27" class="hh"/><line id="clkM" x1="50" y1="56" x2="50" y2="15" class="mh"/>
+    ${CLK.sec ? '<line id="clkSc" x1="50" y1="60" x2="50" y2="11" class="sh"/>' : ''}<circle cx="50" cy="50" r="3.2" class="pin"/></svg>`;
+}
+function clkMenuHTML(){
+  if(!CLK.menu) return '';
+  return `<div class="clkmenu" role="dialog" aria-label="시계 설정">
+    <div class="r"><span>모양</span><div class="seg">${[['analog', '아날로그'], ['digital', '디지털']].map(([k, l]) => `<button data-act="clkType" data-f="${k}" aria-pressed="${CLK.type === k}">${l}</button>`).join('')}</div></div>
+    <div class="r"><span>크기</span><input type="range" class="clkr" min="64" max="240" step="2" value="${CLK.size}" data-act="clkSize" aria-label="시계 크기"></div>
+    <div class="r"><span></span><div class="seg">${[[80, '작게'], [110, '보통'], [150, '크게'], [200, '아주 크게']].map(([v, l]) => `<button data-act="clkPreset" data-f="${v}" aria-pressed="${CLK.size === v}">${l}</button>`).join('')}</div></div>
+    <div class="r"><span>${CLK.type === 'digital' ? '초' : '초침'}</span><button class="btn sm pltg" data-act="clkSec" aria-pressed="${CLK.sec}">${CLK.sec ? '보이기' : '숨기기'}</button></div>
+    ${CLK.type === 'digital' ? `<div class="r"><span>표시</span><div class="seg"><button data-act="clk24" data-f="0" aria-pressed="${!CLK.h24}">오전 · 오후</button><button data-act="clk24" data-f="1" aria-pressed="${CLK.h24}">24시간</button></div></div>` : ''}
+    <div class="r"><button class="btn sm" data-act="clkToggle">시계 숨기기 (T)</button><button class="btn sm" data-act="clkMenu">닫기</button></div>
+  </div>`;
+}
+function clkHTML(){
+  return `<div class="fvclk ${CLK.type}${CLK.on ? '' : ' hide'}" id="fvClk"><button class="clkbtn" data-act="clkMenu" aria-label="시계 · 눌러서 모양과 크기 바꾸기" title="눌러서 모양 · 크기 바꾸기">${clkFace()}</button>${clkMenuHTML()}</div>`;
+}
+function clkTick(){
+  const now = new Date(), h = now.getHours(), m = now.getMinutes(), sc = now.getSeconds();
+  const rot = (id, deg) => { const el = document.getElementById(id); if(el) el.setAttribute('transform', `rotate(${deg.toFixed(2)} 50 50)`); };
+  rot('clkH', (h % 12) * 30 + m * .5); rot('clkM', m * 6 + sc * .1); rot('clkSc', sc * 6);
+  const hm = document.getElementById('clkHM');
+  if(hm){ const hh = CLK.h24 ? h : (h % 12 || 12); hm.textContent = `${CLK.h24 ? String(hh).padStart(2, '0') : hh}:${String(m).padStart(2, '0')}`;
+    const ap = document.getElementById('clkAp'); if(ap) ap.textContent = CLK.h24 ? '' : (h < 12 ? '오전' : '오후');
+    const ss = document.getElementById('clkS'); if(ss) ss.textContent = String(sc).padStart(2, '0'); }
+  const b = document.querySelector('#fvClk .clkbtn'); if(b) b.setAttribute('aria-label', `지금 ${h < 12 ? '오전' : '오후'} ${h % 12 || 12}시 ${m}분 · 눌러서 모양과 크기 바꾸기`);
+  clearTimeout(CLK.timer); if(FV.on) CLK.timer = setTimeout(clkTick, 1000 - now.getMilliseconds() + 5);
+}
+function clkPlace(){ const el = fvEl(), bar = el && el.querySelector('.fvbar'); if(bar) el.style.setProperty('--fvbarh', bar.offsetHeight + 'px'); }
+function clkRedraw(){ const c = document.getElementById('fvClk'); if(!c) return; const n = document.createElement('div'); n.innerHTML = clkHTML(); c.replaceWith(n.firstElementChild); clkTick();
+  const t = document.querySelector('[data-act="clkToggle"][aria-pressed]'); if(t) t.setAttribute('aria-pressed', CLK.on); }
+const CLK_ACT = {
+  clkToggle: () => { CLK.on = !CLK.on; CLK.menu = false; clkSave(); clkRedraw(); },
+  clkMenu: () => { CLK.menu = !CLK.menu; clkRedraw(); },
+  clkType: t => { CLK.type = t.dataset.f; clkSave(); clkRedraw(); },
+  clkPreset: t => { CLK.size = +t.dataset.f; clkSave(); clkRedraw(); },
+  clkSec: () => { CLK.sec = !CLK.sec; clkSave(); clkRedraw(); },
+  clk24: t => { CLK.h24 = t.dataset.f === '1'; clkSave(); clkRedraw(); }
+};
 function fvBaseWidth(){
   const st = document.getElementById('fvStage'); if(!st) return 600;
   const w = st.clientWidth - 32, h = st.clientHeight - 32, byH = h * 794 / 1123;
@@ -1945,7 +2021,7 @@ function fvBuild(){
     box.innerHTML = vis.map(i => paperHTML(pages[i], pw).replace('<div class="paper"', `<div class="paper" data-fvi="${i}"`)).join('');
     vis.forEach(i => markOpened(pages[i].id));
   }
-  fvBindStage();
+  fvBindStage(); clkPlace(); clkTick();
   if(PL.coach) fvEl().insertAdjacentHTML('beforeend', plCoachHTML());
   setTimeout(plMark, 60);
 }
@@ -2030,6 +2106,7 @@ document.addEventListener('keydown', e => {
   else if(k === '0'){ e.preventDefault(); fvSetZoom(1); }
   else if(k === '1'){ fvSetMode('one'); } else if(k === '2'){ fvSetMode('two'); } else if(k === '3'){ fvSetMode('scroll'); }
   else if(k === 'f' || k === 'F'){ fvFullscreen(); }
+  else if(k === 't' || k === 'T'){ CLK_ACT.clkToggle(); }
   else if(k === 'v' || k === 'V'){ setVoices(voiceNext()); }
   else if(k === 'p' || k === 'P'){ e.preventDefault(); plToggle(); }
   else if(k === 'c' || k === 'C'){ PL.coach = !PL.coach; plUI(); }
@@ -2051,7 +2128,7 @@ document.addEventListener('click', e => {
 addEventListener('mousemove', e => { const d = FV.drag; if(!d) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if(Math.abs(dx) + Math.abs(dy) > 4) d.st.classList.add('drag');
   d.st.scrollLeft = d.l - dx; d.st.scrollTop = d.t - dy; });
 addEventListener('mouseup', () => { if(FV.drag){ FV.drag.st.classList.remove('drag'); FV.drag = null; } });
-addEventListener('resize', () => { if(!FV.on) return; clearTimeout(FV.rt); FV.rt = setTimeout(() => { FV.base = fvBaseWidth(); fvApplyZoom(); }, 80); });
+addEventListener('resize', () => { if(!FV.on) return; clkPlace(); clearTimeout(FV.rt); FV.rt = setTimeout(() => { FV.base = fvBaseWidth(); fvApplyZoom(); }, 80); });
 
 // ── 소리 재생 · 메트로놈 · 연습 코치 (v2.6) ─────────────────────────
 // 앱이 직접 만드는 드럼 소리(WebAudio). 읽기 화면 = 아래 플레이어 바, 크게 보기 = 연습 코치
@@ -2808,7 +2885,7 @@ function copy(text, msg){
   if(navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast(msg), () => toast(text));
   else toast(text);
 }
-Object.assign(ACT, PL_ACT);
+Object.assign(ACT, PL_ACT, CLK_ACT);
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if(!t || t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') return;
   const f = ACT[t.dataset.act]; if(!f) return;
@@ -2845,6 +2922,8 @@ document.addEventListener('input', e => {
   if(t.dataset.act === 'bkField' && S.bd){ S.bd[t.dataset.f] = t.value; const pv = $('cvPrev'); if(pv) pv.innerHTML = coverHTML(S.bd); return; }
   if(t.dataset.act === 'pgRange'){ S.pi = +t.value - 1; fitReader(); return; }
   if(t.dataset.act === 'plTempoRange'){ plTempoSet(+t.value); return; }
+  if(t.dataset.act === 'clkSize'){ CLK.size = +t.value; clkSave(); const f = document.querySelector('#fvClk .clkbtn'); if(f){ f.innerHTML = clkFace(); clkTick(); }
+    document.querySelectorAll('[data-act="clkPreset"]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.f === CLK.size)); return; }
   if(t.dataset.act === 'xeRow' && S.xe){ const v = t.value.toUpperCase().replace(/[^RL\- ]/g, ''); if(v !== t.value){ const p = t.selectionStart; t.value = v; try{ t.setSelectionRange(p, p); }catch(_){} }
     S.xe.rows[+t.dataset.i] = v; xeRefresh(); return; }
   if(t.dataset.act === 'listQ'){ S.q = t.value; const pos = t.selectionStart; render(); const n = $('listQ'); if(n){ n.focus(); n.setSelectionRange(pos, pos); } }
